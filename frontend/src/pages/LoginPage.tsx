@@ -12,7 +12,6 @@ import {
 } from "react-router-dom";
 
 import Container from "../components/Container";
-import Button from "../components/Button";
 
 import { useAuth } from "../context/AuthContext";
 
@@ -72,98 +71,100 @@ function LoginPage() {
 
 
   return (
-    <section className="py-16">
+    <section className="py-16 sm:py-24">
 
       <Container>
 
-        <div className="mx-auto max-w-md">
+        <div className="grid gap-14 md:grid-cols-2 md:items-end">
 
-          <h1 className="text-3xl font-bold">
-            Welcome back
-          </h1>
+          <div>
+            <h1>
+              Welcome <em>back</em>
+            </h1>
 
-          <p className="mt-2 text-neutral-600">
-            Sign in to your account.
-          </p>
-
-
-          {error && (
-            <div className="mt-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-              {error}
-            </div>
-          )}
+            <p className="mt-6 text-neutral-600">
+              Sign in to your account.
+            </p>
+          </div>
 
 
-          <form
-            onSubmit={handleSubmit}
-            className="mt-8 space-y-5"
-          >
+          <div className="max-w-md">
 
-            <div>
-
-              <label className="mb-2 block text-sm font-medium">
-                Email
-              </label>
-
-              <input
-                type="email"
-                value={email}
-                onChange={(event) =>
-                  setEmail(event.target.value)
-                }
-                required
-                className="w-full rounded-lg border border-neutral-300 px-4 py-3 outline-none focus:border-black"
-                placeholder="you@example.com"
-              />
-
-            </div>
+            {error && (
+              <div className="vero-error mb-8">
+                {error}
+              </div>
+            )}
 
 
-            <div>
-
-              <label className="mb-2 block text-sm font-medium">
-                Password
-              </label>
-
-              <input
-                type="password"
-                value={password}
-                onChange={(event) =>
-                  setPassword(event.target.value)
-                }
-                required
-                className="w-full rounded-lg border border-neutral-300 px-4 py-3 outline-none focus:border-black"
-                placeholder="••••••••"
-              />
-
-            </div>
-
-
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={loading}
+            <form
+              onSubmit={handleSubmit}
+              className="space-y-8"
             >
-              {loading
-                ? "Signing in..."
-                : "Sign in"}
-            </Button>
 
-          </form>
+              <div>
+                <label className="vero-label">
+                  Email
+                </label>
+
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(event) =>
+                    setEmail(event.target.value)
+                  }
+                  required
+                  className="vero-input"
+                  placeholder="you@example.com"
+                />
+              </div>
 
 
-          <p className="mt-6 text-center text-sm text-neutral-600">
+              <div>
+                <label className="vero-label">
+                  Password
+                </label>
 
-            Don't have an account?{" "}
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(event) =>
+                    setPassword(event.target.value)
+                  }
+                  required
+                  className="vero-input"
+                  placeholder="••••••••"
+                />
+              </div>
 
-            <Link
-              to="/register"
-              className="font-semibold text-black hover:underline"
-            >
-              Create one
-            </Link>
 
-          </p>
+              <button
+                type="submit"
+                className="vero-btn w-full"
+                disabled={loading}
+              >
+                {loading
+                  ? "Signing in..."
+                  : "Sign in"}
+              </button>
+
+            </form>
+
+
+            <p className="mt-8 text-sm text-neutral-600">
+
+              Don't have an account?{" "}
+
+              <Link
+                to="/register"
+                className="font-semibold text-black underline underline-offset-4"
+              >
+                Create one
+              </Link>
+
+            </p>
+
+          </div>
 
         </div>
 
