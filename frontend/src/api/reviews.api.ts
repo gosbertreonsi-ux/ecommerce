@@ -1,196 +1,96 @@
-import apiClient from "./client";
-
-
-/*
-|--------------------------------------------------------------------------
-| REVIEW STATUS
-|--------------------------------------------------------------------------
-*/
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  "http://localhost:5000/api";
 
 export type ReviewStatus =
   | "PENDING"
   | "APPROVED"
   | "REJECTED";
 
-
-/*
-|--------------------------------------------------------------------------
-| CUSTOMER REVIEW
-|--------------------------------------------------------------------------
-*/
-
 export interface CustomerReview {
   id: number;
-
   rating: number;
-
   comment: string | null;
-
   status: ReviewStatus;
 
   userId: number;
-
   productId: number;
-
-  createdAt: string;
-
-  updatedAt: string;
 
   product?: {
     id: number;
-
     name: string;
-
     sku: string;
-
     slug: string;
   };
+
+  createdAt: string;
+  updatedAt: string;
 }
 
-
-/*
-|--------------------------------------------------------------------------
-| CREATE REVIEW DATA
-|--------------------------------------------------------------------------
-*/
-
-export interface CreateReviewData {
+export interface CreateReviewInput {
   orderId: number;
-
   productId: number;
-
   rating: number;
-
   comment?: string | null;
 }
 
-
-/*
-|--------------------------------------------------------------------------
-| API RESPONSES
-|--------------------------------------------------------------------------
-*/
-
-interface ReviewResponse {
+interface ApiResponse<T> {
   success: boolean;
-
   message?: string;
-
-  data: CustomerReview;
+  data: T;
 }
 
+export const createReview = async (
+  token: string,
+  data: CreateReviewInput,
+): Promise<CustomerReview> => {
+  const response = await fetch(
+    `${API_URL}/reviews`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    },
+  );
 
-interface ReviewsResponse {
-  success: boolean;
+  const result: ApiResponse<CustomerReview> =
+    await response.json();
 
-  message?: string;
+  if (!response.ok) {
+    throw new Error(
+      result.message ||
+        "Failed to submit review",
+    );
+  }
 
-  data: CustomerReview[];
-}
+  return result.data;
+};
 
+export const getMyReviews = async (
+  token: string,
+): Promise<CustomerReview[]> => {
+  const response = await fetch(
+    `${API_URL}/reviews/my`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    },
+  );
 
-/*
-|--------------------------------------------------------------------------
-| GET MY REVIEWS
-|--------------------------------------------------------------------------
-*/
+  const result: ApiResponse<CustomerReview[]> =
+    await response.json();
 
-export const getMyReviews =
-  async (
-    token: string,
-  ): Promise<CustomerReview[]> => {
+  if (!response.ok) {
+    throw new Error(
+      result.message ||
+        "Failed to fetch reviews",
+    );
+  }
 
-    if (!token) {
-      throw new Error(
-        "Authentication token is required.",
-      );
-    }
-
-
-    const response =
-      await apiClient.get<ReviewsResponse>(
-        "/reviews/my",
-        {
-          headers: {
-            Authorization:
-              `Bearer ${token}`,
-          },
-        },
-      );
-
-
-    return response.data.data;
-  };
-
-
-/*
-|--------------------------------------------------------------------------
-| CREATE REVIEW
-|--------------------------------------------------------------------------
-*/
-
-export const createReview =
-  async (
-    token: string,
-    data: CreateReviewData,
-  ): Promise<CustomerReview> => {
-
-    if (!token) {
-      throw new Error(
-        "Authentication token is required.",
-      );
-    }
-
-
-    if (
-      !Number.isInteger(
-        data.orderId,
-      ) ||
-      data.orderId <= 0
-    ) {
-      throw new Error(
-        "Invalid order ID.",
-      );
-    }
-
-
-    if (
-      !Number.isInteger(
-        data.productId,
-      ) ||
-      data.productId <= 0
-    ) {
-      throw new Error(
-        "Invalid product ID.",
-      );
-    }
-
-
-    if (
-      !Number.isInteger(
-        data.rating,
-      ) ||
-      data.rating < 1 ||
-      data.rating > 5
-    ) {
-      throw new Error(
-        "Rating must be between 1 and 5.",
-      );
-    }
-
-
-    const response =
-      await apiClient.post<ReviewResponse>(
-        "/reviews",
-        data,
-        {
-          headers: {
-            Authorization:
-              `Bearer ${token}`,
-          },
-        },
-      );
-
-
-    return response.data.data;
-  };
+  return result.data;
+};
