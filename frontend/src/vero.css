@@ -1,4 +1,9 @@
-@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Inter:wght@400;500;600&display=swap");
+/* =========================================================
+   vero.css
+   Fonts are loaded with <link> tags in index.html, NOT with
+   @import here (see integration notes). Import this file in
+   main.tsx AFTER your Tailwind CSS.
+   ========================================================= */
 
 /* =========================================================
    1. Tokens
@@ -48,9 +53,19 @@ h1, h2, h3 {
 h1 { font-size: clamp(2.4rem, 6vw, 4.5rem); }
 h2 { font-size: clamp(1.4rem, 2.4vw, 1.9rem); }
 
-h1 em, h2 em, .serif-italic {
+/* Smaller heading sizes. Use these instead of text-* utilities on h1/h2:
+   an element selector in this file can beat a utility (Tailwind v4), and
+   a class + element selector always wins. */
+h1.vero-title    { font-size: clamp(2rem, 5vw, 3.25rem); }
+h2.vero-title-sm { font-size: 1.4rem; }
+
+h1 em, h2 em, h3 em, .serif-italic {
   font-style: italic;
   font-weight: 400;
+}
+
+.serif-italic {
+  font-family: var(--font-serif);
 }
 
 :focus-visible {
@@ -67,8 +82,9 @@ button, a {
 
 /* =========================================================
    3. Tailwind re-skin
-   Tailwind's utilities are unlayered, so !important is
-   required here. Keep it confined to this section.
+   !important keeps these winning over Tailwind utilities no
+   matter which version or load order is in use. Keep it
+   confined to this section.
    ========================================================= */
 .bg-gray-50, .bg-neutral-50   { background-color: var(--paper) !important; }
 .bg-white                     { background-color: var(--card) !important; }
@@ -101,11 +117,14 @@ button, a {
 .uppercase                 { text-transform: none; letter-spacing: 0; }
 .aspect-square             { aspect-ratio: 4 / 5; }
 
-/* Hover states only where hover exists (avoids sticky hover on touch) */
+/* Hover states only where hover exists (avoids sticky hover on touch).
+   The muted text rule above is !important, so hover colours need to be too. */
 @media (hover: hover) {
   .hover\:bg-gray-800:hover,
   .hover\:bg-gray-700:hover,
   .hover\:bg-neutral-800:hover { background-color: var(--ink-soft) !important; }
+
+  .hover\:text-black:hover { color: var(--ink) !important; }
 
   .hover\:shadow-sm:hover { box-shadow: none !important; }
 }
