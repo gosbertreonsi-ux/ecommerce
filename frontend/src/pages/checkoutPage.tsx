@@ -1,2154 +1,595 @@
-import {
-  useEffect,
-  useState,
-} from "react";
+import { useEffect, useState } from "react";
+import type { ChangeEvent, FormEvent, ReactNode } from "react";
 
-import {
-  Link,
-  useNavigate,
-} from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
-import {
-  Check,
-  CreditCard,
-  MapPin,
-  Plus,
-  Smartphone,
-} from "lucide-react";
+import { Banknote, Check, CreditCard, Plus, Smartphone } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+
+import Container from "../components/Container";
+import EmptyState from "../components/EmptyState";
+import Spinner from "../components/Spinner";
 
 import { useCartStore } from "../stores/cartStore";
 
-import {
-  getAddresses,
-  createAddress,
-} from "../api/addresses.api";
+import { getAddresses, createAddress } from "../api/addresses.api";
+import type { Address } from "../api/addresses.api";
 
-import type {
-  Address,
-} from "../api/addresses.api";
+import { createOrder } from "../api/orders.api";
+import type { PaymentMethod } from "../api/orders.api";
 
-import {
-  createOrder,
-} from "../api/orders.api";
-
-import type {
-  PaymentMethod,
-} from "../api/orders.api";
+import { useAuth } from "../context/AuthContext";
 
 import {
-  useAuth,
-} from "../context/AuthContext";
+  formatTZS,
+  getPrimaryImageUrl,
+  swapToPlaceholder,
+} from "../utils/format";
 
-
-/*
-|--------------------------------------------------------------------------
-| PRODUCT IMAGE URL
-|--------------------------------------------------------------------------
-*/
-
-const getProductImageUrl = (
-  imageUrl: string,
-): string => {
-  if (
-    imageUrl.startsWith("http://") ||
-    imageUrl.startsWith("https://")
-  ) {
-    return imageUrl;
-  }
-
-  const apiBase =
-    import.meta.env.VITE_API_URL ||
-    "http://localhost:5000/api";
-
-  const backendOrigin =
-    apiBase.replace(
-      /\/api\/?$/,
-      "",
-    );
-
-  return `${backendOrigin}${
-    imageUrl.startsWith("/")
-      ? imageUrl
-      : `/${imageUrl}`
-  }`;
+const EMPTY_ADDRESS = {
+  label: "Home",
+  street: "",
+  city: "",
+  region: "",
+  postalCode: "",
+  country: "Tanzania",
 };
 
+type AddressForm = typeof EMPTY_ADDRESS;
 
-/*
-|--------------------------------------------------------------------------
-| CHECKOUT PAGE
-|--------------------------------------------------------------------------
-*/
+const ADDRESS_FIELDS: {
+  name: keyof AddressForm;
+  label: string;
+  required?: boolean;
+  autoComplete: string;
+}[] = [
+  { name: "label", label: "Label", autoComplete: "off" },
+  { name: "street", label: "Street", required: true, autoComplete: "address-line1" },
+  { name: "city", label: "City", required: true, autoComplete: "address-level2" },
+  { name: "region", label: "Region", required: true, autoComplete: "address-level1" },
+  { name: "postalCode", label: "Postal code", autoComplete: "postal-code" },
+  { name: "country", label: "Country", required: true, autoComplete: "country-name" },
+];
 
-const CheckoutPage = () => {
+const PAYMENT_OPTIONS: {
+  value: PaymentMethod;
+  label: string;
+  description: string;
+  icon: LucideIcon;
+}[] = [
+  {
+    value: "CASH",
+    label: "Cash on delivery",
+    description: "Pay when your order arrives",
+    icon: Banknote,
+  },
+  {
+    value: "CARD",
+    label: "Card",
+    description: "Pay securely with a card",
+    icon: CreditCard,
+  },
+  {
+    value: "MOBILE_MONEY",
+    label: "Mobile money",
+    description: "Pay using mobile money",
+    icon: Smartphone,
+  },
+];
 
-  const navigate =
-    useNavigate();
+interface OptionButtonProps {
+  selected: boolean;
+  onClick: () => void;
+  children: ReactNode;
+}
 
+/** A selectable card. `border-black` wins over the base border colour from vero.css. */
+function OptionButton({ selected, onClick, children }: OptionButtonProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={selected}
+      className={`flex w-full items-start justify-between gap-4 border p-5 text-left ${
+        selected ? "border-black bg-gray-50" : ""
+      }`}
+    >
+      {children}
 
-  /*
-  |--------------------------------------------------------------------------
-  | AUTH
-  |--------------------------------------------------------------------------
-  */
+      {selected && <Check size={18} aria-hidden="true" className="mt-1 shrink-0" />}
+    </button>
+  );
+}
 
-  const {
-    token,
-    loading: authLoading,
-  } = useAuth();
+function CheckoutPage() {
+  const navigate = useNavigate();
 
+  const { token, loading: authLoading } = useAuth();
 
-  /*
-  |--------------------------------------------------------------------------
-  | CART STORE
-  |--------------------------------------------------------------------------
-  */
+  const items = useCartStore((state) => state.items);
+  const cartLoading = useCartStore((state) => state.loading);
+  const loadCart = useCartStore((state) => state.loadCart);
+  const getTotal = useCartStore((state) => state.getTotal);
+  const clearCart = useCartStore((state) => state.clearCart);
 
-  const items =
-    useCartStore(
-      (state) =>
-        state.items,
-    );
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
+  const [loadingAddresses, setLoadingAddresses] = useState(false);
 
-  const cartLoading =
-    useCartStore(
-      (state) =>
-        state.loading,
-    );
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("CASH");
 
-  const loadCart =
-    useCartStore(
-      (state) =>
-        state.loadCart,
-    );
+  const [showAddressForm, setShowAddressForm] = useState(false);
+  const [savingAddress, setSavingAddress] = useState(false);
+  const [addressForm, setAddressForm] = useState<AddressForm>(EMPTY_ADDRESS);
 
-  const getTotal =
-    useCartStore(
-      (state) =>
-        state.getTotal,
-    );
+  const [placingOrder, setPlacingOrder] = useState(false);
+  const [error, setError] = useState("");
 
-  const clearCart =
-    useCartStore(
-      (state) =>
-        state.clearCart,
-    );
-
-
-  /*
-  |--------------------------------------------------------------------------
-  | ADDRESS STATE
-  |--------------------------------------------------------------------------
-  */
-
-  const [
-    addresses,
-    setAddresses,
-  ] =
-    useState<Address[]>([]);
-
-  const [
-    selectedAddressId,
-    setSelectedAddressId,
-  ] =
-    useState<number | null>(
-      null,
-    );
-
-  const [
-    loadingAddresses,
-    setLoadingAddresses,
-  ] =
-    useState(false);
-
-
-  /*
-  |--------------------------------------------------------------------------
-  | PAYMENT STATE
-  |--------------------------------------------------------------------------
-  */
-
-  const [
-    paymentMethod,
-    setPaymentMethod,
-  ] =
-    useState<PaymentMethod>(
-      "CASH",
-    );
-
-
-  /*
-  |--------------------------------------------------------------------------
-  | NEW ADDRESS FORM
-  |--------------------------------------------------------------------------
-  */
-
-  const [
-    showAddressForm,
-    setShowAddressForm,
-  ] =
-    useState(false);
-
-  const [
-    savingAddress,
-    setSavingAddress,
-  ] =
-    useState(false);
-
-  const [
-    addressForm,
-    setAddressForm,
-  ] =
-    useState({
-      label: "Home",
-      street: "",
-      city: "",
-      region: "",
-      postalCode: "",
-      country: "Tanzania",
-    });
-
-
-  /*
-  |--------------------------------------------------------------------------
-  | ORDER STATE
-  |--------------------------------------------------------------------------
-  */
-
-  const [
-    placingOrder,
-    setPlacingOrder,
-  ] =
-    useState(false);
-
-  const [
-    error,
-    setError,
-  ] =
-    useState("");
-
-
-  /*
-  |--------------------------------------------------------------------------
-  | LOAD CART
-  |--------------------------------------------------------------------------
-  */
-
+  // Load cart
   useEffect(() => {
-
-    if (authLoading) {
-      return;
-    }
-
-    if (!token) {
-      return;
-    }
+    if (authLoading || !token) return;
 
     let cancelled = false;
 
+    const loadUserCart = async () => {
+      try {
+        setError("");
 
-    const loadUserCart =
-      async () => {
+        await loadCart(token);
+      } catch (err) {
+        if (cancelled) return;
 
-        try {
+        console.error("CHECKOUT: Cart loading failed:", err);
 
-          setError("");
+        setError(err instanceof Error ? err.message : "Failed to load cart");
+      }
+    };
 
-          console.log(
-            "CHECKOUT: Loading cart...",
-          );
-
-          await loadCart(token);
-
-          if (cancelled) {
-            return;
-          }
-
-          console.log(
-            "CHECKOUT: Cart loaded.",
-          );
-
-        } catch (err) {
-
-          if (cancelled) {
-            return;
-          }
-
-          console.error(
-            "CHECKOUT: Cart loading failed:",
-            err,
-          );
-
-          setError(
-            err instanceof Error
-              ? err.message
-              : "Failed to load cart",
-          );
-        }
-      };
-
-
-    loadUserCart();
-
+    void loadUserCart();
 
     return () => {
       cancelled = true;
     };
+  }, [token, authLoading, loadCart]);
 
-  }, [
-    token,
-    authLoading,
-    loadCart,
-  ]);
-
-
-  /*
-  |--------------------------------------------------------------------------
-  | LOAD ADDRESSES
-  |--------------------------------------------------------------------------
-  */
-
+  // Load addresses, then select the default one (or the first)
   useEffect(() => {
-
-    if (authLoading) {
-      return;
-    }
-
-    if (!token) {
-      return;
-    }
+    if (authLoading || !token) return;
 
     let cancelled = false;
 
+    const loadUserAddresses = async () => {
+      try {
+        setLoadingAddresses(true);
 
-    const loadUserAddresses =
-      async () => {
+        const result = await getAddresses(token);
 
-        try {
+        if (cancelled) return;
 
-          setLoadingAddresses(
-            true,
-          );
+        const loaded = Array.isArray(result) ? result : [];
 
-          console.log(
-            "CHECKOUT: Loading addresses...",
-          );
+        setAddresses(loaded);
 
+        const addressToSelect =
+          loaded.find((address) => address.isDefault) ?? loaded[0];
 
-          const result =
-            await getAddresses(
-              token,
-            );
-
-
-          if (cancelled) {
-            return;
-          }
-
-
-          const loadedAddresses =
-            Array.isArray(result)
-              ? result
-              : [];
-
-
-          console.log(
-            "CHECKOUT: Addresses received:",
-            loadedAddresses,
-          );
-
-
-          setAddresses(
-            loadedAddresses,
-          );
-
-
-          /*
-           * Automatically select:
-           *
-           * 1. Default address
-           * 2. Otherwise first address
-           */
-
-          const defaultAddress =
-            loadedAddresses.find(
-              (address) =>
-                address.isDefault,
-            );
-
-
-          const firstAddress =
-            loadedAddresses[0];
-
-
-          const addressToSelect =
-            defaultAddress ||
-            firstAddress;
-
-
-          if (
-            addressToSelect
-          ) {
-
-            setSelectedAddressId(
-              addressToSelect.id,
-            );
-          }
-
-        } catch (err) {
-
-          if (cancelled) {
-            return;
-          }
-
-          console.error(
-            "CHECKOUT: Address loading failed:",
-            err,
-          );
-
-          setError(
-            err instanceof Error
-              ? err.message
-              : "Failed to load addresses",
-          );
-
-        } finally {
-
-          if (!cancelled) {
-
-            setLoadingAddresses(
-              false,
-            );
-          }
+        if (addressToSelect) {
+          setSelectedAddressId(addressToSelect.id);
         }
-      };
+      } catch (err) {
+        if (cancelled) return;
 
+        console.error("CHECKOUT: Address loading failed:", err);
 
-    loadUserAddresses();
+        setError(err instanceof Error ? err.message : "Failed to load addresses");
+      } finally {
+        if (!cancelled) setLoadingAddresses(false);
+      }
+    };
 
+    void loadUserAddresses();
 
     return () => {
       cancelled = true;
     };
+  }, [token, authLoading]);
 
-  }, [
-    token,
-    authLoading,
-  ]);
+  const handleAddressChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = event.target;
 
+    setAddressForm((current) => ({ ...current, [name]: value }));
+  };
 
-  /*
-  |--------------------------------------------------------------------------
-  | HANDLE ADDRESS INPUT
-  |--------------------------------------------------------------------------
-  */
+  const handleCreateAddress = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
 
-  const handleAddressChange =
-    (
-      event:
-        React.ChangeEvent<HTMLInputElement>,
-    ) => {
+    if (!token) return;
 
-      const {
-        name,
-        value,
-      } = event.target;
+    try {
+      setSavingAddress(true);
+      setError("");
 
+      const newAddress = await createAddress(token, addressForm);
 
-      setAddressForm(
-        (current) => ({
-          ...current,
-          [name]: value,
-        }),
+      setAddresses((current) => [...current, newAddress]);
+      setSelectedAddressId(newAddress.id);
+      setShowAddressForm(false);
+      setAddressForm(EMPTY_ADDRESS);
+    } catch (err) {
+      console.error("CHECKOUT: Address creation failed:", err);
+
+      setError(err instanceof Error ? err.message : "Failed to create address");
+    } finally {
+      setSavingAddress(false);
+    }
+  };
+
+  const handlePlaceOrder = async () => {
+    if (!token) {
+      setError("Please sign in before placing your order.");
+      return;
+    }
+
+    if (!selectedAddressId) {
+      setError("Select a delivery address.");
+      return;
+    }
+
+    if (!paymentMethod) {
+      setError("Select a payment method.");
+      return;
+    }
+
+    if (items.length === 0) {
+      setError("Your cart is empty.");
+      return;
+    }
+
+    try {
+      setPlacingOrder(true);
+      setError("");
+
+      const result = await createOrder(
+        token,
+        selectedAddressId,
+        items,
+        paymentMethod,
       );
-    };
 
-
-  /*
-  |--------------------------------------------------------------------------
-  | CREATE ADDRESS
-  |--------------------------------------------------------------------------
-  */
-
-  const handleCreateAddress =
-    async (
-      event:
-        React.FormEvent<HTMLFormElement>,
-    ) => {
-
-      event.preventDefault();
-
-
-      if (!token) {
-        return;
-      }
-
-
-      try {
-
-        setSavingAddress(
-          true,
-        );
-
-        setError("");
-
-
-        const newAddress =
-          await createAddress(
-            token,
-            {
-              label:
-                addressForm.label,
-
-              street:
-                addressForm.street,
-
-              city:
-                addressForm.city,
-
-              region:
-                addressForm.region,
-
-              postalCode:
-                addressForm.postalCode,
-
-              country:
-                addressForm.country,
-            },
-          );
-
-
-        console.log(
-          "CHECKOUT: New address:",
-          newAddress,
-        );
-
-
-        setAddresses(
-          (current) => [
-            ...current,
-            newAddress,
-          ],
-        );
-
-
-        setSelectedAddressId(
-          newAddress.id,
-        );
-
-
-        setShowAddressForm(
-          false,
-        );
-
-
-        setAddressForm({
-          label: "Home",
-          street: "",
-          city: "",
-          region: "",
-          postalCode: "",
-          country: "Tanzania",
-        });
-
-      } catch (err) {
-
-        console.error(
-          "CHECKOUT: Address creation failed:",
-          err,
-        );
-
-        setError(
-          err instanceof Error
-            ? err.message
-            : "Failed to create address",
-        );
-
-      } finally {
-
-        setSavingAddress(
-          false,
-        );
-      }
-    };
-
-
-  /*
-  |--------------------------------------------------------------------------
-  | PLACE ORDER
-  |--------------------------------------------------------------------------
-  */
-
-  const handlePlaceOrder =
-    async () => {
-
-      /*
-       * Authentication
-       */
-
-      if (!token) {
-
-        setError(
-          "Please log in before placing your order.",
-        );
-
-        return;
-      }
-
-
-      /*
-       * Address
-       */
-
-      if (
-        !selectedAddressId
-      ) {
-
-        setError(
-          "Please select a delivery address.",
-        );
-
-        return;
-      }
-
-
-      /*
-       * Payment method
-       */
-
-      if (!paymentMethod) {
-
-        setError(
-          "Please select a payment method.",
-        );
-
-        return;
-      }
-
-
-      /*
-       * Cart
-       */
-
-      if (
-        items.length === 0
-      ) {
-
-        setError(
-          "Your cart is empty.",
-        );
-
-        return;
-      }
-
-
-      try {
-
-        setPlacingOrder(
-          true,
-        );
-
-        setError("");
-
-
-        console.log(
-          "CHECKOUT: Creating order...",
-        );
-
-        console.log(
-          "CHECKOUT: Payment method:",
-          paymentMethod,
-        );
-
-
-        /*
-         * Create order.
-         */
-
-        const result =
-          await createOrder(
-            token,
-            selectedAddressId,
-            items,
-            paymentMethod,
-          );
-
-
-        console.log(
-          "CHECKOUT: Order created:",
-          result,
-        );
-
-
-        /*
-         * Clear backend + Zustand cart.
-         */
-
-        await clearCart(
-          token,
-        );
-
-
-        /*
-         * Go to order details.
-         */
-
-        navigate(
-          `/orders/${result.data.id}`,
-        );
-
-      } catch (err) {
-
-        console.error(
-          "CHECKOUT: Order creation failed:",
-          err,
-        );
-
-        setError(
-          err instanceof Error
-            ? err.message
-            : "Failed to place order",
-        );
-
-      } finally {
-
-        setPlacingOrder(
-          false,
-        );
-      }
-    };
-
-
-  /*
-  |--------------------------------------------------------------------------
-  | TOTAL
-  |--------------------------------------------------------------------------
-  */
-
-  const total =
-    getTotal();
-
-
-  /*
-  |--------------------------------------------------------------------------
-  | AUTH LOADING
-  |--------------------------------------------------------------------------
-  */
+      // Clear backend + Zustand cart
+      await clearCart(token);
+
+      navigate(`/orders/${result.data.id}`);
+    } catch (err) {
+      console.error("CHECKOUT: Order creation failed:", err);
+
+      setError(err instanceof Error ? err.message : "Failed to place order");
+    } finally {
+      setPlacingOrder(false);
+    }
+  };
 
   if (authLoading) {
-
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-
-        <p className="text-gray-600">
-          Checking authentication...
-        </p>
-
-      </div>
-    );
+    return <Spinner label="Checking your session…" />;
   }
-
-
-  /*
-  |--------------------------------------------------------------------------
-  | LOGIN REQUIRED
-  |--------------------------------------------------------------------------
-  */
 
   if (!token) {
-
     return (
-      <div className="min-h-screen flex items-center justify-center px-4">
-
-        <div className="text-center">
-
-          <h1 className="text-2xl font-bold">
-            Login required
-          </h1>
-
-          <p className="mt-2 text-gray-600">
-            Please log in to continue to checkout.
-          </p>
-
-          <Link
-            to="/login"
-            className="
-              inline-block
-              mt-6
-              rounded-lg
-              bg-black
-              px-6
-              py-3
-              text-white
-              hover:bg-gray-800
-            "
-          >
-            Login
-          </Link>
-
-        </div>
-
-      </div>
+      <EmptyState
+        title={
+          <>
+            Sign in to <em>continue</em>
+          </>
+        }
+        message="You need an account to check out."
+      >
+        <Link to="/login" className="vero-btn">
+          Sign in
+        </Link>
+      </EmptyState>
     );
   }
-
-
-  /*
-  |--------------------------------------------------------------------------
-  | CART LOADING
-  |--------------------------------------------------------------------------
-  */
 
   if (cartLoading) {
+    return <Spinner label="Loading your cart…" />;
+  }
 
+  if (items.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-
-        <div className="text-center">
-
-          <div
-            className="
-              mx-auto
-              h-10
-              w-10
-              animate-spin
-              rounded-full
-              border-4
-              border-gray-200
-              border-t-black
-            "
-          />
-
-          <p className="mt-4 text-gray-600">
-            Loading your cart...
-          </p>
-
-        </div>
-
-      </div>
+      <EmptyState
+        title={
+          <>
+            Your cart is <em>empty</em>
+          </>
+        }
+        message="Add some products before checking out."
+      >
+        <Link to="/products" className="vero-btn">
+          Continue shopping
+        </Link>
+      </EmptyState>
     );
   }
 
+  const total = getTotal();
 
-  /*
-  |--------------------------------------------------------------------------
-  | EMPTY CART
-  |--------------------------------------------------------------------------
-  */
-
-  if (
-    items.length === 0
-  ) {
-
-    return (
-      <div className="min-h-screen flex items-center justify-center px-4">
-
-        <div className="text-center">
-
-          <h1 className="text-2xl font-bold">
-            Your cart is empty
-          </h1>
-
-          <p className="mt-2 text-gray-600">
-            Add some products before checking out.
-          </p>
-
-          <Link
-            to="/products"
-            className="
-              inline-block
-              mt-6
-              rounded-lg
-              bg-black
-              px-6
-              py-3
-              text-white
-              hover:bg-gray-800
-            "
-          >
-            Continue Shopping
-          </Link>
-
-        </div>
-
-      </div>
-    );
-  }
-
-
-  /*
-  |--------------------------------------------------------------------------
-  | MAIN CHECKOUT PAGE
-  |--------------------------------------------------------------------------
-  */
+  const selectedPayment = PAYMENT_OPTIONS.find(
+    (option) => option.value === paymentMethod,
+  );
 
   return (
+    <section className="py-12 sm:py-16">
+      <Container>
+        <div className="mb-12 flex flex-wrap items-end justify-between gap-4 border-b pb-8">
+          <div>
+            <h1>
+              Complete your <em>order</em>
+            </h1>
 
-    <div className="min-h-screen bg-gray-50">
-
-      {/* =========================================================
-          HEADER
-      ========================================================= */}
-
-      <header className="border-b bg-white">
-
-        <div
-          className="
-            mx-auto
-            max-w-7xl
-            px-4
-            py-6
-            sm:px-6
-            lg:px-8
-          "
-        >
-
-          <div className="flex items-center justify-between">
-
-            <div>
-
-              <h1 className="text-2xl font-bold">
-                Checkout
-              </h1>
-
-              <p className="mt-1 text-sm text-gray-500">
-                Complete your order
-              </p>
-
-            </div>
-
-
-            <Link
-              to="/cart"
-              className="
-                text-sm
-                font-medium
-                text-gray-600
-                hover:text-black
-              "
-            >
-              Back to Cart
-            </Link>
-
+            <p className="mt-4 text-neutral-600">
+              Choose where it goes and how you'll pay.
+            </p>
           </div>
 
+          <Link
+            to="/cart"
+            className="text-sm text-neutral-600 underline underline-offset-4 hover:text-black"
+          >
+            Back to cart
+          </Link>
         </div>
 
-      </header>
-
-
-      {/* =========================================================
-          MAIN
-      ========================================================= */}
-
-      <main
-        className="
-          mx-auto
-          max-w-7xl
-          px-4
-          py-8
-          sm:px-6
-          lg:px-8
-        "
-      >
-
-        {/* ERROR */}
-
         {error && (
-
-          <div
-            className="
-              mb-6
-              rounded-lg
-              border
-              border-red-200
-              bg-red-50
-              px-4
-              py-3
-              text-sm
-              text-red-700
-            "
-          >
+          <div className="vero-error mb-8" role="alert">
             {error}
           </div>
-
         )}
 
-
-        <div
-          className="
-            grid
-            grid-cols-1
-            gap-8
-            lg:grid-cols-3
-          "
-        >
-
-          {/* =====================================================
-              LEFT SIDE
-          ===================================================== */}
-
-          <div
-            className="
-              space-y-6
-              lg:col-span-2
-            "
-          >
-
-            {/* ===================================================
-                DELIVERY ADDRESS
-            =================================================== */}
-
-            <section
-              className="
-                rounded-xl
-                border
-                bg-white
-                p-6
-              "
-            >
-
-              <div
-                className="
-                  mb-5
-                  flex
-                  items-center
-                  justify-between
-                "
-              >
-
-                <div className="flex items-center gap-3">
-
-                  <MapPin size={22} />
-
-                  <h2 className="text-lg font-semibold">
-                    Delivery Address
-                  </h2>
-
-                </div>
-
+        <div className="grid gap-12 lg:grid-cols-3">
+          <div className="space-y-8 lg:col-span-2">
+            {/* Delivery address */}
+            <section className="border bg-white p-6 sm:p-8">
+              <div className="mb-6 flex items-center justify-between gap-4">
+                <h2>Delivery address</h2>
 
                 <button
                   type="button"
-                  onClick={() =>
-                    setShowAddressForm(
-                      (value) =>
-                        !value,
-                    )
-                  }
-                  className="
-                    flex
-                    items-center
-                    gap-2
-                    text-sm
-                    font-medium
-                    text-black
-                    hover:underline
-                  "
+                  onClick={() => setShowAddressForm((value) => !value)}
+                  aria-expanded={showAddressForm}
+                  className="inline-flex items-center gap-2 text-sm underline underline-offset-4"
                 >
-
-                  <Plus size={16} />
-
-                  Add Address
-
+                  <Plus size={16} aria-hidden="true" />
+                  Add address
                 </button>
-
               </div>
 
-
-              {/* ADDRESS LOADING */}
-
               {loadingAddresses && (
-
-                <p className="text-sm text-gray-500">
-                  Loading addresses...
-                </p>
-
+                <p className="text-sm text-neutral-500">Loading addresses…</p>
               )}
 
+              {!loadingAddresses && addresses.length === 0 && (
+                <p className="border border-dashed p-6 text-center text-neutral-600">
+                  You don't have a delivery address yet.
+                </p>
+              )}
 
-              {/* NO ADDRESS */}
+              {!loadingAddresses && addresses.length > 0 && (
+                <div className="space-y-3">
+                  {addresses.map((address) => (
+                    <OptionButton
+                      key={address.id}
+                      selected={selectedAddressId === address.id}
+                      onClick={() => setSelectedAddressId(address.id)}
+                    >
+                      <div>
+                        <p>
+                          {address.label}
 
-              {!loadingAddresses &&
-                addresses.length === 0 && (
+                          {address.isDefault && (
+                            <span className="ml-2 rounded-full border px-2 py-0.5 text-xs text-neutral-600">
+                              Default
+                            </span>
+                          )}
+                        </p>
 
-                  <div
-                    className="
-                      rounded-lg
-                      border
-                      border-dashed
-                      p-6
-                      text-center
-                    "
-                  >
+                        <p className="mt-2 text-sm text-neutral-600">
+                          {address.street}, {address.city}
+                        </p>
 
-                    <p className="text-gray-500">
-                      You don't have a delivery address yet.
-                    </p>
+                        <p className="text-sm text-neutral-600">
+                          {address.region}, {address.country}
+                        </p>
 
-                  </div>
-
-                )}
-
-
-              {/* ADDRESS LIST */}
-
-              {!loadingAddresses &&
-                addresses.length > 0 && (
-
-                  <div className="space-y-3">
-
-                    {addresses.map(
-                      (address) => {
-
-                        const selected =
-                          selectedAddressId ===
-                          address.id;
-
-
-                        return (
-
-                          <button
-                            key={
-                              address.id
-                            }
-                            type="button"
-                            onClick={() =>
-                              setSelectedAddressId(
-                                address.id,
-                              )
-                            }
-                            className={`
-                              w-full
-                              rounded-lg
-                              border
-                              p-4
-                              text-left
-                              transition
-                              ${
-                                selected
-                                  ? "border-black bg-gray-50"
-                                  : "border-gray-200 hover:border-gray-400"
-                              }
-                            `}
-                          >
-
-                            <div
-                              className="
-                                flex
-                                items-start
-                                justify-between
-                              "
-                            >
-
-                              <div>
-
-                                <div
-                                  className="
-                                    flex
-                                    items-center
-                                    gap-2
-                                  "
-                                >
-
-                                  <span className="font-semibold">
-                                    {
-                                      address.label
-                                    }
-                                  </span>
-
-
-                                  {address.isDefault && (
-
-                                    <span
-                                      className="
-                                        rounded-full
-                                        bg-gray-100
-                                        px-2
-                                        py-1
-                                        text-xs
-                                        text-gray-600
-                                      "
-                                    >
-                                      Default
-                                    </span>
-
-                                  )}
-
-                                </div>
-
-
-                                <p
-                                  className="
-                                    mt-2
-                                    text-sm
-                                    text-gray-600
-                                  "
-                                >
-                                  {
-                                    address.street
-                                  }
-                                  ,{" "}
-                                  {
-                                    address.city
-                                  }
-                                </p>
-
-
-                                <p
-                                  className="
-                                    text-sm
-                                    text-gray-600
-                                  "
-                                >
-                                  {
-                                    address.region
-                                  }
-                                  ,{" "}
-                                  {
-                                    address.country
-                                  }
-                                </p>
-
-
-                                {address.postalCode && (
-
-                                  <p
-                                    className="
-                                      text-sm
-                                      text-gray-600
-                                    "
-                                  >
-                                    {
-                                      address.postalCode
-                                    }
-                                  </p>
-
-                                )}
-
-                              </div>
-
-
-                              {selected && (
-
-                                <div
-                                  className="
-                                    flex
-                                    h-7
-                                    w-7
-                                    items-center
-                                    justify-center
-                                    rounded-full
-                                    bg-black
-                                    text-white
-                                  "
-                                >
-
-                                  <Check size={16} />
-
-                                </div>
-
-                              )}
-
-                            </div>
-
-                          </button>
-
-                        );
-                      },
-                    )}
-
-                  </div>
-
-                )}
-
-
-              {/* =================================================
-                  NEW ADDRESS FORM
-              ================================================= */}
+                        {address.postalCode && (
+                          <p className="text-sm text-neutral-600">
+                            {address.postalCode}
+                          </p>
+                        )}
+                      </div>
+                    </OptionButton>
+                  ))}
+                </div>
+              )}
 
               {showAddressForm && (
-
                 <form
-                  onSubmit={
-                    handleCreateAddress
-                  }
-                  className="
-                    mt-6
-                    border-t
-                    pt-6
-                  "
+                  onSubmit={handleCreateAddress}
+                  className="mt-8 border-t pt-8"
                 >
+                  <h3 className="mb-6 text-xl">New address</h3>
 
-                  <h3 className="mb-4 font-semibold">
-                    Add New Address
-                  </h3>
+                  <div className="grid grid-cols-1 gap-x-8 gap-y-8 sm:grid-cols-2">
+                    {ADDRESS_FIELDS.map((field) => (
+                      <div key={field.name}>
+                        <label
+                          htmlFor={`address-${field.name}`}
+                          className="vero-label"
+                        >
+                          {field.label}
+                        </label>
 
-
-                  <div
-                    className="
-                      grid
-                      grid-cols-1
-                      gap-4
-                      sm:grid-cols-2
-                    "
-                  >
-
-                    <input
-                      name="label"
-                      value={
-                        addressForm.label
-                      }
-                      onChange={
-                        handleAddressChange
-                      }
-                      placeholder="Label"
-                      className="
-                        rounded-lg
-                        border
-                        px-4
-                        py-3
-                        outline-none
-                        focus:border-black
-                      "
-                    />
-
-
-                    <input
-                      name="street"
-                      value={
-                        addressForm.street
-                      }
-                      onChange={
-                        handleAddressChange
-                      }
-                      placeholder="Street"
-                      required
-                      className="
-                        rounded-lg
-                        border
-                        px-4
-                        py-3
-                        outline-none
-                        focus:border-black
-                      "
-                    />
-
-
-                    <input
-                      name="city"
-                      value={
-                        addressForm.city
-                      }
-                      onChange={
-                        handleAddressChange
-                      }
-                      placeholder="City"
-                      required
-                      className="
-                        rounded-lg
-                        border
-                        px-4
-                        py-3
-                        outline-none
-                        focus:border-black
-                      "
-                    />
-
-
-                    <input
-                      name="region"
-                      value={
-                        addressForm.region
-                      }
-                      onChange={
-                        handleAddressChange
-                      }
-                      placeholder="Region"
-                      required
-                      className="
-                        rounded-lg
-                        border
-                        px-4
-                        py-3
-                        outline-none
-                        focus:border-black
-                      "
-                    />
-
-
-                    <input
-                      name="postalCode"
-                      value={
-                        addressForm.postalCode
-                      }
-                      onChange={
-                        handleAddressChange
-                      }
-                      placeholder="Postal Code"
-                      className="
-                        rounded-lg
-                        border
-                        px-4
-                        py-3
-                        outline-none
-                        focus:border-black
-                      "
-                    />
-
-
-                    <input
-                      name="country"
-                      value={
-                        addressForm.country
-                      }
-                      onChange={
-                        handleAddressChange
-                      }
-                      placeholder="Country"
-                      required
-                      className="
-                        rounded-lg
-                        border
-                        px-4
-                        py-3
-                        outline-none
-                        focus:border-black
-                      "
-                    />
-
+                        <input
+                          id={`address-${field.name}`}
+                          name={field.name}
+                          value={addressForm[field.name]}
+                          onChange={handleAddressChange}
+                          required={field.required}
+                          autoComplete={field.autoComplete}
+                          className="vero-input"
+                        />
+                      </div>
+                    ))}
                   </div>
 
-
-                  <div
-                    className="
-                      mt-4
-                      flex
-                      gap-3
-                    "
-                  >
-
+                  <div className="mt-8 flex flex-wrap gap-3">
                     <button
                       type="submit"
-                      disabled={
-                        savingAddress
-                      }
-                      className="
-                        rounded-lg
-                        bg-black
-                        px-5
-                        py-3
-                        text-sm
-                        font-medium
-                        text-white
-                        disabled:cursor-not-allowed
-                        disabled:opacity-50
-                      "
+                      disabled={savingAddress}
+                      className="vero-btn"
                     >
-
-                      {savingAddress
-                        ? "Saving..."
-                        : "Save Address"}
-
+                      {savingAddress ? "Saving…" : "Save address"}
                     </button>
-
 
                     <button
                       type="button"
-                      onClick={() =>
-                        setShowAddressForm(
-                          false,
-                        )
-                      }
-                      className="
-                        rounded-lg
-                        border
-                        px-5
-                        py-3
-                        text-sm
-                        font-medium
-                      "
+                      onClick={() => setShowAddressForm(false)}
+                      className="vero-btn vero-btn--ghost"
                     >
                       Cancel
                     </button>
-
                   </div>
-
                 </form>
-
               )}
-
             </section>
 
-
-            {/* ===================================================
-                PAYMENT METHOD
-            =================================================== */}
-
-            <section
-              className="
-                rounded-xl
-                border
-                bg-white
-                p-6
-              "
-            >
-
-              <h2
-                className="
-                  mb-5
-                  text-lg
-                  font-semibold
-                "
-              >
-                Payment Method
-              </h2>
-
+            {/* Payment method */}
+            <section className="border bg-white p-6 sm:p-8">
+              <h2 className="mb-6">Payment method</h2>
 
               <div className="space-y-3">
+                {PAYMENT_OPTIONS.map((option) => {
+                  const Icon = option.icon;
 
-                {/* CASH */}
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    setPaymentMethod(
-                      "CASH",
-                    )
-                  }
-                  className={`
-                    flex
-                    w-full
-                    items-center
-                    justify-between
-                    rounded-lg
-                    border
-                    p-4
-                    text-left
-                    transition
-                    ${
-                      paymentMethod ===
-                      "CASH"
-                        ? "border-black bg-gray-50"
-                        : "border-gray-200 hover:border-gray-400"
-                    }
-                  `}
-                >
-
-                  <div className="flex items-center gap-4">
-
-                    <div
-                      className="
-                        flex
-                        h-10
-                        w-10
-                        items-center
-                        justify-center
-                        rounded-full
-                        bg-gray-100
-                      "
+                  return (
+                    <OptionButton
+                      key={option.value}
+                      selected={paymentMethod === option.value}
+                      onClick={() => setPaymentMethod(option.value)}
                     >
-                      <span className="text-lg">
-                        💵
-                      </span>
-                    </div>
+                      <div className="flex items-center gap-4">
+                        <Icon size={22} aria-hidden="true" className="shrink-0" />
 
+                        <div>
+                          <p>{option.label}</p>
 
-                    <div>
-
-                      <p className="font-medium">
-                        Cash on Delivery
-                      </p>
-
-                      <p className="mt-1 text-sm text-gray-500">
-                        Pay when your order arrives
-                      </p>
-
-                    </div>
-
-                  </div>
-
-
-                  {paymentMethod ===
-                    "CASH" && (
-
-                    <div
-                      className="
-                        flex
-                        h-7
-                        w-7
-                        items-center
-                        justify-center
-                        rounded-full
-                        bg-black
-                        text-white
-                      "
-                    >
-                      <Check size={16} />
-                    </div>
-
-                  )}
-
-                </button>
-
-
-                {/* CARD */}
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    setPaymentMethod(
-                      "CARD",
-                    )
-                  }
-                  className={`
-                    flex
-                    w-full
-                    items-center
-                    justify-between
-                    rounded-lg
-                    border
-                    p-4
-                    text-left
-                    transition
-                    ${
-                      paymentMethod ===
-                      "CARD"
-                        ? "border-black bg-gray-50"
-                        : "border-gray-200 hover:border-gray-400"
-                    }
-                  `}
-                >
-
-                  <div className="flex items-center gap-4">
-
-                    <div
-                      className="
-                        flex
-                        h-10
-                        w-10
-                        items-center
-                        justify-center
-                        rounded-full
-                        bg-gray-100
-                      "
-                    >
-                      <CreditCard size={20} />
-                    </div>
-
-
-                    <div>
-
-                      <p className="font-medium">
-                        Card
-                      </p>
-
-                      <p className="mt-1 text-sm text-gray-500">
-                        Pay securely with a card
-                      </p>
-
-                    </div>
-
-                  </div>
-
-
-                  {paymentMethod ===
-                    "CARD" && (
-
-                    <div
-                      className="
-                        flex
-                        h-7
-                        w-7
-                        items-center
-                        justify-center
-                        rounded-full
-                        bg-black
-                        text-white
-                      "
-                    >
-                      <Check size={16} />
-                    </div>
-
-                  )}
-
-                </button>
-
-
-                {/* MOBILE MONEY */}
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    setPaymentMethod(
-                      "MOBILE_MONEY",
-                    )
-                  }
-                  className={`
-                    flex
-                    w-full
-                    items-center
-                    justify-between
-                    rounded-lg
-                    border
-                    p-4
-                    text-left
-                    transition
-                    ${
-                      paymentMethod ===
-                      "MOBILE_MONEY"
-                        ? "border-black bg-gray-50"
-                        : "border-gray-200 hover:border-gray-400"
-                    }
-                  `}
-                >
-
-                  <div className="flex items-center gap-4">
-
-                    <div
-                      className="
-                        flex
-                        h-10
-                        w-10
-                        items-center
-                        justify-center
-                        rounded-full
-                        bg-gray-100
-                      "
-                    >
-                      <Smartphone size={20} />
-                    </div>
-
-
-                    <div>
-
-                      <p className="font-medium">
-                        Mobile Money
-                      </p>
-
-                      <p className="mt-1 text-sm text-gray-500">
-                        Pay using mobile money
-                      </p>
-
-                    </div>
-
-                  </div>
-
-
-                  {paymentMethod ===
-                    "MOBILE_MONEY" && (
-
-                    <div
-                      className="
-                        flex
-                        h-7
-                        w-7
-                        items-center
-                        justify-center
-                        rounded-full
-                        bg-black
-                        text-white
-                      "
-                    >
-                      <Check size={16} />
-                    </div>
-
-                  )}
-
-                </button>
-
+                          <p className="mt-1 text-sm text-neutral-500">
+                            {option.description}
+                          </p>
+                        </div>
+                      </div>
+                    </OptionButton>
+                  );
+                })}
               </div>
-
             </section>
 
+            {/* Products */}
+            <section className="border bg-white p-6 sm:p-8">
+              <h2 className="mb-6">Your products</h2>
 
-            {/* ===================================================
-                ORDER ITEMS
-            =================================================== */}
+              <ul className="divide-y">
+                {items.map((item) => {
+                  const price = Number(item.product.price) || 0;
 
-            <section
-              className="
-                rounded-xl
-                border
-                bg-white
-                p-6
-              "
-            >
-
-              <h2
-                className="
-                  mb-5
-                  text-lg
-                  font-semibold
-                "
-              >
-                Your Products
-              </h2>
-
-
-              <div className="divide-y">
-
-                {items.map(
-                  (
-                    item,
-                    index,
-                  ) => {
-
-                    const imagePath =
-                      item.product.images
-                        ?.find(
-                          (image) =>
-                            image.isPrimary,
-                        )
-                        ?.imageUrl ??
-                      item.product.images
-                        ?.[0]
-                        ?.imageUrl;
-
-
-                    const image =
-                      imagePath
-                        ? getProductImageUrl(
-                            imagePath,
-                          )
-                        : "https://placehold.co/200x200?text=No+Image";
-
-
-                    const price =
-                      Number(
-                        item.product.price,
-                      ) || 0;
-
-
-                    const subtotal =
-                      price *
-                      item.quantity;
-
-
-                    return (
-
-                      <div
-                        key={`${item.product.id}-${index}`}
-                        className="
-                          flex
-                          gap-4
-                          py-5
-                        "
-                      >
-
+                  return (
+                    <li
+                      key={`${item.product.id}-${item.variantId}`}
+                      className="flex gap-4 py-5 first:pt-0 last:pb-0"
+                    >
+                      <div className="aspect-square w-20 shrink-0 overflow-hidden border">
                         <img
-                          src={image}
-                          alt={
-                            item.product.images
-                              ?.find(
-                                (
-                                  productImage,
-                                ) =>
-                                  productImage.isPrimary,
-                              )
-                              ?.altText ||
-                            item.product.name
-                          }
-                          className="
-                            h-20
-                            w-20
-                            rounded-lg
-                            border
-                            object-cover
-                          "
-                          onError={(
-                            event,
-                          ) => {
-                            event.currentTarget.src =
-                              "https://placehold.co/200x200?text=No+Image";
-                          }}
+                          src={getPrimaryImageUrl(item.product.images)}
+                          alt={item.product.name}
+                          className="h-full w-full object-cover"
+                          onError={swapToPlaceholder}
                         />
-
-
-                        <div className="flex-1">
-
-                          <h3 className="font-medium">
-                            {
-                              item.product.name
-                            }
-                          </h3>
-
-
-                          <p
-                            className="
-                              mt-1
-                              text-sm
-                              text-gray-500
-                            "
-                          >
-                            Quantity:{" "}
-                            {
-                              item.quantity
-                            }
-                          </p>
-
-
-                          <p
-                            className="
-                              mt-1
-                              text-sm
-                              text-gray-500
-                            "
-                          >
-                            TZS{" "}
-                            {price.toLocaleString()}
-                            {" "}each
-                          </p>
-
-                        </div>
-
-
-                        <div
-                          className="
-                            text-right
-                            font-semibold
-                          "
-                        >
-                          TZS{" "}
-                          {subtotal.toLocaleString()}
-                        </div>
-
                       </div>
 
-                    );
-                  },
-                )}
+                      <div className="flex-1">
+                        <h3 className="text-lg">{item.product.name}</h3>
 
-              </div>
+                        <p className="mt-1 text-sm text-neutral-500">
+                          {item.variantName}: {item.variantValue}
+                        </p>
 
+                        <p className="mt-1 text-sm text-neutral-500">
+                          Quantity: {item.quantity}
+                        </p>
+
+                        <p className="mt-1 text-sm text-neutral-500">
+                          {formatTZS(price)} each
+                        </p>
+                      </div>
+
+                      <p className="text-right">{formatTZS(price * item.quantity)}</p>
+                    </li>
+                  );
+                })}
+              </ul>
             </section>
-
           </div>
 
-
-          {/* =====================================================
-              RIGHT SIDE - SUMMARY
-          ===================================================== */}
-
+          {/* Summary */}
           <aside>
+            <div className="sticky top-6 border bg-white p-6 sm:p-8">
+              <h2 className="mb-6">Order summary</h2>
 
-            <div
-              className="
-                sticky
-                top-6
-                rounded-xl
-                border
-                bg-white
-                p-6
-              "
-            >
-
-              <h2
-                className="
-                  mb-6
-                  text-lg
-                  font-semibold
-                "
-              >
-                Order Summary
-              </h2>
-
-
-              <div
-                className="
-                  space-y-3
-                  text-sm
-                "
-              >
-
-                <div
-                  className="
-                    flex
-                    justify-between
-                  "
-                >
-
-                  <span className="text-gray-600">
-                    Products
-                  </span>
-
-                  <span>
-                    {items.length}
-                  </span>
-
+              <dl className="space-y-3 text-sm">
+                <div className="flex justify-between">
+                  <dt className="text-neutral-600">Products</dt>
+                  <dd>{items.length}</dd>
                 </div>
 
-
-                <div
-                  className="
-                    flex
-                    justify-between
-                  "
-                >
-
-                  <span className="text-gray-600">
-                    Subtotal
-                  </span>
-
-                  <span>
-                    TZS{" "}
-                    {total.toLocaleString()}
-                  </span>
-
+                <div className="flex justify-between">
+                  <dt className="text-neutral-600">Subtotal</dt>
+                  <dd>{formatTZS(total)}</dd>
                 </div>
 
-
-                <div
-                  className="
-                    flex
-                    justify-between
-                  "
-                >
-
-                  <span className="text-gray-600">
-                    Delivery
-                  </span>
-
-                  <span>
-                    Free
-                  </span>
-
+                <div className="flex justify-between">
+                  <dt className="text-neutral-600">Delivery</dt>
+                  <dd>Free</dd>
                 </div>
 
+                <div className="flex justify-between">
+                  <dt className="text-neutral-600">Payment</dt>
+                  <dd>{selectedPayment?.label}</dd>
+                </div>
+              </dl>
+
+              <div className="my-6 flex justify-between border-t pt-6 text-lg">
+                <span>Total</span>
+                <span>{formatTZS(total)}</span>
               </div>
-
-
-              {/* SELECTED PAYMENT */}
-
-              <div
-                className="
-                  mt-5
-                  rounded-lg
-                  bg-gray-50
-                  p-4
-                "
-              >
-
-                <p
-                  className="
-                    text-xs
-                    font-medium
-                    uppercase
-                    tracking-wide
-                    text-gray-500
-                  "
-                >
-                  Payment
-                </p>
-
-
-                <p className="mt-1 font-medium">
-
-                  {paymentMethod ===
-                    "CASH" &&
-                    "Cash on Delivery"}
-
-                  {paymentMethod ===
-                    "CARD" &&
-                    "Card"}
-
-                  {paymentMethod ===
-                    "MOBILE_MONEY" &&
-                    "Mobile Money"}
-
-                </p>
-
-              </div>
-
-
-              <div
-                className="
-                  my-6
-                  border-t
-                  pt-6
-                "
-              >
-
-                <div
-                  className="
-                    flex
-                    justify-between
-                    text-lg
-                    font-bold
-                  "
-                >
-
-                  <span>
-                    Total
-                  </span>
-
-                  <span>
-                    TZS{" "}
-                    {total.toLocaleString()}
-                  </span>
-
-                </div>
-
-              </div>
-
-
-              {/* PLACE ORDER */}
 
               <button
                 type="button"
-                onClick={
-                  handlePlaceOrder
-                }
-                disabled={
-                  placingOrder ||
-                  !selectedAddressId ||
-                  items.length === 0
-                }
-                className="
-                  w-full
-                  rounded-lg
-                  bg-black
-                  px-5
-                  py-3
-                  font-medium
-                  text-white
-                  transition
-                  hover:bg-gray-800
-                  disabled:cursor-not-allowed
-                  disabled:opacity-50
-                "
+                onClick={handlePlaceOrder}
+                disabled={placingOrder || !selectedAddressId || items.length === 0}
+                className="vero-btn w-full"
+                aria-busy={placingOrder}
               >
-
-                {placingOrder
-                  ? "Placing Order..."
-                  : "Place Order"}
-
+                {placingOrder ? "Placing order…" : "Place order"}
               </button>
 
-
-              <p
-                className="
-                  mt-4
-                  text-center
-                  text-xs
-                  text-gray-500
-                "
-              >
-                By placing your order, you agree
-                to our terms and conditions.
+              <p className="mt-4 text-center text-xs text-neutral-500">
+                By placing your order, you agree to our terms and conditions.
               </p>
-
             </div>
-
           </aside>
-
         </div>
-
-      </main>
-
-    </div>
+      </Container>
+    </section>
   );
-};
-
+}
 
 export default CheckoutPage;
