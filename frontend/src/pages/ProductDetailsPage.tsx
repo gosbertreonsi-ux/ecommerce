@@ -1,804 +1,424 @@
-import {
-  useEffect,
-  useState,
-} from "react";
+import { useEffect, useState } from "react";
 
-import {
-  Link,
-  useNavigate,
-  useParams,
-} from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 
-import {
-  ArrowLeft,
-  Minus,
-  Plus,
-  ShoppingCart,
-} from "lucide-react";
+import { ArrowLeft, Minus, Plus, ShoppingCart } from "lucide-react";
 
-import Container from "../components/Container";
 import Button from "../components/Button";
+import Container from "../components/Container";
+import EmptyState from "../components/EmptyState";
+import Spinner from "../components/Spinner";
+
+import { getProduct } from "../api/products.api";
+
+import type { Product } from "../types/product";
+
+import { useCartStore } from "../stores/cartStore";
+import { useAuth } from "../context/AuthContext";
 
 import {
-  getProduct,
-} from "../api/products.api";
+  formatTZS,
+  getPrimaryImageUrl,
+  pickImage,
+  swapToPlaceholder,
+} from "../utils/format";
 
-import type {
-  Product,
-} from "../types/product";
+type Feedback = {
+  type: "error" | "success";
+  message: string;
+};
 
-import {
-  useCartStore,
-} from "../stores/cartStore";
-
-import {
-  useAuth,
-} from "../context/AuthContext";
-
-
-function getProductImageUrl(
-  imageUrl: string,
-): string {
-  if (
-    imageUrl.startsWith("http://") ||
-    imageUrl.startsWith("https://")
-  ) {
-    return imageUrl;
-  }
-
-  const apiBase =
-    import.meta.env.VITE_API_URL ||
-    "http://localhost:5000/api";
-
-  const backendOrigin =
-    apiBase.replace(
-      /\/api\/?$/,
-      "",
-    );
-
-  return `${backendOrigin}${
-    imageUrl.startsWith("/")
-      ? imageUrl
-      : `/${imageUrl}`
-  }`;
-}
-
+const quantityButtonClass =
+  "inline-flex h-11 w-11 items-center justify-center hover:bg-[color:var(--paper-deep)] disabled:cursor-not-allowed disabled:opacity-40";
 
 function ProductDetailsPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { token } = useAuth();
 
-  const navigate =
-    useNavigate();
+  const addItem = useCartStore((state) => state.addItem);
 
-  const { token } =
-    useAuth();
-
-  const [product, setProduct] =
-    useState<Product | null>(null);
-
-  const [loading, setLoading] =
-    useState(true);
-
-  const [error, setError] =
-    useState<string | null>(null);
-
-  const [adding, setAdding] =
-    useState(false);
-
-  const [buying, setBuying] =
-    useState(false);
-
-  const [selectedVariantId, setSelectedVariantId] =
-    useState<number | null>(null);
-
-  const [quantity, setQuantity] =
-    useState(1);
-
-  const addItem =
-    useCartStore(
-      (state) => state.addItem,
-    );
-
-
-  // ============================================================
-  // LOAD PRODUCT
-  // ============================================================
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
+  const [buying, setBuying] = useState(false);
+  const [selectedVariantId, setSelectedVariantId] = useState<number | null>(null);
+  const [quantity, setQuantity] = useState(1);
+  const [feedback, setFeedback] = useState<Feedback | null>(null);
 
   useEffect(() => {
-    const loadProduct =
-      async () => {
-        if (!id) {
-          setError(
-            "Product ID is missing.",
-          );
+    if (!id) {
+      setError("Product ID is missing.");
+      setLoading(false);
+      return;
+    }
 
-          setLoading(false);
+    let cancelled = false;
 
-          return;
-        }
+    const loadProduct = async () => {
+      try {
+        setLoading(true);
 
-        try {
-          setLoading(true);
+        const data = await getProduct(Number(id));
 
-          const data =
-            await getProduct(
-              Number(id),
-            );
+        if (cancelled) return;
 
-          setProduct(data);
+        setProduct(data);
 
-          /*
-          |----------------------------------------------------------
-          | DEFAULT VARIANT
-          |----------------------------------------------------------
-          */
+        const firstAvailable = data.variants.find(
+          (variant) => Number(variant.stock) > 0,
+        );
 
-          const firstAvailableVariant =
-            data.variants.find(
-              (variant) =>
-                Number(
-                  variant.stock,
-                ) > 0,
-            );
+        setSelectedVariantId(firstAvailable?.id ?? data.variants[0]?.id ?? null);
+        setQuantity(1);
+        setError(null);
+      } catch (err) {
+        if (cancelled) return;
 
-          setSelectedVariantId(
-            firstAvailableVariant
-              ? firstAvailableVariant.id
-              : data.variants[0]?.id ??
-                  null,
-          );
-
-          setQuantity(1);
-
-          setError(null);
-        } catch (err) {
-          setError(
-            err instanceof Error
-              ? err.message
-              : "Failed to load product.",
-          );
-        } finally {
-          setLoading(false);
-        }
-      };
+        setError(err instanceof Error ? err.message : "Failed to load product.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
 
     void loadProduct();
+
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
-
-  // ============================================================
-  // LOADING
-  // ============================================================
-
   if (loading) {
-    return (
-      <Container className="py-20">
-        <p className="text-neutral-500">
-          Loading product...
-        </p>
-      </Container>
-    );
+    return <Spinner label="Loading product…" />;
   }
-
-
-  // ============================================================
-  // ERROR
-  // ============================================================
 
   if (error || !product) {
     return (
-      <Container className="py-20">
-        <h1 className="text-2xl font-bold">
-          Product not found
-        </h1>
-
-        <p className="mt-2 text-neutral-600">
-          {error ||
-            "The product could not be found."}
-        </p>
-
-        <Link
-          to="/products"
-          className="mt-4 inline-block underline"
-        >
+      <EmptyState
+        title={
+          <>
+            Product not <em>found</em>
+          </>
+        }
+        message={error || "The product could not be found."}
+      >
+        <Link to="/products" className="vero-btn vero-btn--ghost">
           Back to products
         </Link>
-      </Container>
+      </EmptyState>
     );
   }
 
+  const primaryImage = pickImage(product.images);
 
-  // ============================================================
-  // PRODUCT IMAGE
-  // ============================================================
+  const totalStock = product.variants.reduce(
+    (total, variant) => total + Number(variant.stock),
+    0,
+  );
 
-  const image =
-    product.images.find(
-      (item) =>
-        item.isPrimary,
-    )?.imageUrl ??
-    product.images[0]?.imageUrl ??
-    "https://placehold.co/800x800?text=No+Image";
+  const selectedVariant = product.variants.find(
+    (variant) => variant.id === selectedVariantId,
+  );
 
-  const imageUrl =
-    getProductImageUrl(image);
+  const selectedStock = selectedVariant ? Number(selectedVariant.stock) : 0;
 
+  const canPurchase = Boolean(selectedVariant) && selectedStock > 0;
 
-  // ============================================================
-  // TOTAL STOCK
-  // ============================================================
+  const handleVariantSelect = (variantId: number) => {
+    setSelectedVariantId(variantId);
+    setQuantity(1);
+    setFeedback(null);
+  };
 
-  const stock =
-    product.variants.reduce(
-      (total, variant) =>
-        total + Number(variant.stock),
-      0,
-    );
+  const decreaseQuantity = () => {
+    setQuantity((current) => Math.max(1, current - 1));
+  };
 
+  const increaseQuantity = () => {
+    if (selectedStock <= 0) return;
 
-  // ============================================================
-  // SELECTED VARIANT
-  // ============================================================
+    setQuantity((current) => Math.min(selectedStock, current + 1));
+  };
 
-  const selectedVariant =
-    product.variants.find(
-      (variant) =>
-        variant.id ===
-        selectedVariantId,
-    );
+  /** Returns a message when the current selection can't be bought, otherwise null. */
+  const getSelectionProblem = (): string | null => {
+    if (!selectedVariant) return "Select a product option first.";
 
-  const selectedStock =
-    selectedVariant
-      ? Number(
-          selectedVariant.stock,
-        )
-      : 0;
+    if (selectedStock <= 0) return "This option is out of stock.";
 
+    if (quantity > selectedStock) {
+      return `Only ${selectedStock} items are available.`;
+    }
 
-  // ============================================================
-  // VARIANT SELECTION
-  // ============================================================
+    return null;
+  };
 
-  const handleVariantSelect =
-    (
-      variantId: number,
-    ) => {
-      setSelectedVariantId(
-        variantId,
-      );
+  const handleAddToCart = async () => {
+    if (!token) {
+      setFeedback({
+        type: "error",
+        message: "Sign in to add products to your cart.",
+      });
+      return;
+    }
 
-      setQuantity(1);
-    };
+    const problem = getSelectionProblem();
 
+    if (problem || !selectedVariant) {
+      setFeedback({
+        type: "error",
+        message: problem ?? "Select a product option first.",
+      });
+      return;
+    }
 
-  // ============================================================
-  // QUANTITY
-  // ============================================================
+    try {
+      setAdding(true);
+      setFeedback(null);
 
-  const decreaseQuantity =
-    () => {
-      setQuantity(
-        (current) =>
-          Math.max(
-            1,
-            current - 1,
-          ),
-      );
-    };
+      await addItem(product, selectedVariant.id, token, quantity);
 
-  const increaseQuantity =
-    () => {
-      if (
-        selectedStock <= 0
-      ) {
-        return;
-      }
+      setFeedback({
+        type: "success",
+        message: `${product.name} (${selectedVariant.name}: ${selectedVariant.value}) was added to your cart.`,
+      });
+    } catch (err) {
+      console.error("ADD TO CART ERROR:", err);
 
-      setQuantity(
-        (current) =>
-          Math.min(
-            selectedStock,
-            current + 1,
-          ),
-      );
-    };
+      setFeedback({
+        type: "error",
+        message:
+          err instanceof Error ? err.message : "Failed to add product to cart.",
+      });
+    } finally {
+      setAdding(false);
+    }
+  };
 
+  const handleBuyNow = async () => {
+    if (!token) {
+      navigate("/login");
+      return;
+    }
 
-  // ============================================================
-  // ADD TO CART
-  // ============================================================
+    const problem = getSelectionProblem();
 
-  const handleAddToCart =
-    async () => {
-      if (!product) {
-        return;
-      }
+    if (problem || !selectedVariant) {
+      setFeedback({
+        type: "error",
+        message: problem ?? "Select a product option first.",
+      });
+      return;
+    }
 
-      if (!token) {
-        alert(
-          "Please login before adding products to your cart.",
-        );
+    try {
+      setBuying(true);
+      setFeedback(null);
 
-        return;
-      }
+      await addItem(product, selectedVariant.id, token, quantity);
 
-      if (!selectedVariant) {
-        alert(
-          "Please select a product variant.",
-        );
+      navigate("/checkout");
+    } catch (err) {
+      console.error("BUY NOW ERROR:", err);
 
-        return;
-      }
-
-      if (
-        selectedVariant.stock <=
-        0
-      ) {
-        alert(
-          "This variant is currently out of stock.",
-        );
-
-        return;
-      }
-
-      if (
-        quantity >
-        selectedVariant.stock
-      ) {
-        alert(
-          `Only ${selectedVariant.stock} items are available.`,
-        );
-
-        return;
-      }
-
-      try {
-        setAdding(true);
-
-        await addItem(
-          product,
-          selectedVariant.id,
-          token,
-          quantity,
-        );
-
-        alert(
-          `${product.name} (${selectedVariant.name}: ${selectedVariant.value}) added to cart`,
-        );
-      } catch (err) {
-        console.error(
-          "ADD TO CART ERROR:",
-          err,
-        );
-
-        alert(
-          err instanceof Error
-            ? err.message
-            : "Failed to add product to cart.",
-        );
-      } finally {
-        setAdding(false);
-      }
-    };
-
-
-  // ============================================================
-  // BUY NOW
-  // ============================================================
-
-  const handleBuyNow =
-    async () => {
-      if (!product) {
-        return;
-      }
-
-      if (!token) {
-        alert(
-          "Please login before buying products.",
-        );
-
-        navigate("/login");
-
-        return;
-      }
-
-      if (!selectedVariant) {
-        alert(
-          "Please select a product variant.",
-        );
-
-        return;
-      }
-
-      if (
-        selectedVariant.stock <=
-        0
-      ) {
-        alert(
-          "This variant is currently out of stock.",
-        );
-
-        return;
-      }
-
-      if (
-        quantity >
-        selectedVariant.stock
-      ) {
-        alert(
-          `Only ${selectedVariant.stock} items are available.`,
-        );
-
-        return;
-      }
-
-      try {
-        setBuying(true);
-
-        await addItem(
-          product,
-          selectedVariant.id,
-          token,
-          quantity,
-        );
-
-        navigate("/checkout");
-      } catch (err) {
-        console.error(
-          "BUY NOW ERROR:",
-          err,
-        );
-
-        alert(
-          err instanceof Error
-            ? err.message
-            : "Failed to start purchase.",
-        );
-      } finally {
-        setBuying(false);
-      }
-    };
-
-
-  // ============================================================
-  // PAGE
-  // ============================================================
+      setFeedback({
+        type: "error",
+        message:
+          err instanceof Error ? err.message : "Failed to start purchase.",
+      });
+    } finally {
+      setBuying(false);
+    }
+  };
 
   return (
     <section className="py-12 sm:py-16">
-
       <Container>
-
-        {/* BACK */}
-
         <Link
           to="/products"
-          className="mb-8 inline-flex items-center gap-2 text-sm text-neutral-600 hover:text-black"
+          className="mb-8 inline-flex items-center gap-2 text-sm text-neutral-600 hover:text-black hover:underline"
         >
-          <ArrowLeft
-            size={16}
-          />
-
+          <ArrowLeft size={16} aria-hidden="true" />
           Back to products
         </Link>
 
-
-        <div className="grid gap-10 lg:grid-cols-2">
-
-          {/* IMAGE */}
-
-          <div className="overflow-hidden rounded-2xl bg-neutral-100">
-
+        <div className="grid gap-12 lg:grid-cols-2">
+          {/* Image */}
+          <div className="aspect-square overflow-hidden bg-neutral-100">
             <img
-              src={imageUrl}
-              alt={
-                product.images.find(
-                  (item) =>
-                    item.isPrimary,
-                )?.altText ||
-                product.name
-              }
-              className="aspect-square h-full w-full object-cover"
-              onError={(event) => {
-                event.currentTarget.src =
-                  "https://placehold.co/800x800?text=No+Image";
-              }}
+              src={getPrimaryImageUrl(product.images)}
+              alt={primaryImage?.altText || product.name}
+              className="h-full w-full object-cover"
+              onError={swapToPlaceholder}
             />
-
           </div>
 
-
-          {/* DETAILS */}
-
+          {/* Details */}
           <div className="flex flex-col justify-center">
+            <p className="text-sm text-neutral-500">{product.category.name}</p>
 
-            <p className="text-sm text-neutral-500">
-              {product.category.name}
+            <h1 className="mt-3 text-4xl sm:text-5xl">{product.name}</h1>
+
+            <p className="mt-3 text-sm text-neutral-500">SKU: {product.sku}</p>
+
+            <p className="mt-6 text-3xl [font-family:var(--font-serif)]">
+              {formatTZS(product.price)}
             </p>
 
-            <h1 className="mt-2 text-4xl font-bold">
-              {product.name}
-            </h1>
-
-            <p className="mt-3 text-sm text-neutral-500">
-              SKU: {product.sku}
-            </p>
-
-            <p className="mt-6 text-3xl font-bold">
-              TZS{" "}
-              {Number(
-                product.price,
-              ).toLocaleString()}
-            </p>
-
-            <p className="mt-6 leading-7 text-neutral-600">
+            <p className="mt-6 max-w-prose leading-7 text-neutral-600">
               {product.description}
             </p>
 
-
-            {/* TOTAL STOCK */}
-
             <p className="mt-6 text-sm">
-              {stock > 0
-                ? `${stock} items available`
-                : "Out of stock"}
+              {totalStock > 0 ? `${totalStock} items available` : "Out of stock"}
             </p>
 
-
-            {/* VARIANTS */}
-
-            {product.variants.length >
-              0 && (
-              <div className="mt-6">
-
-                <h3 className="font-semibold">
+            {/* Variants */}
+            {product.variants.length > 0 && (
+              <fieldset className="mt-8">
+                <legend className="text-lg [font-family:var(--font-serif)]">
                   Select an option
-                </h3>
+                </legend>
 
                 <div className="mt-3 grid gap-3">
+                  {product.variants.map((variant) => {
+                    const isSelected = variant.id === selectedVariantId;
+                    const variantStock = Number(variant.stock);
+                    const isOutOfStock = variantStock <= 0;
 
-                  {product.variants.map(
-                    (variant) => {
-                      const isSelected =
-                        variant.id ===
-                        selectedVariantId;
+                    return (
+                      <button
+                        key={variant.id}
+                        type="button"
+                        disabled={isOutOfStock}
+                        aria-pressed={isSelected}
+                        onClick={() => handleVariantSelect(variant.id)}
+                        className={`flex items-center justify-between gap-4 border px-4 py-3 text-left ${
+                          isSelected ? "border-black bg-black text-white" : "bg-white"
+                        } ${isOutOfStock ? "cursor-not-allowed opacity-50" : ""}`}
+                      >
+                        <span>
+                          <span className="block">{variant.name}</span>
 
-                      const variantStock =
-                        Number(
-                          variant.stock,
-                        );
-
-                      const isOutOfStock =
-                        variantStock <=
-                        0;
-
-                      return (
-                        <button
-                          key={
-                            variant.id
-                          }
-                          type="button"
-                          disabled={
-                            isOutOfStock
-                          }
-                          onClick={() =>
-                            handleVariantSelect(
-                              variant.id,
-                            )
-                          }
-                          className={`flex items-center justify-between rounded-xl border px-4 py-3 text-left transition ${
-                            isSelected
-                              ? "border-black bg-black text-white"
-                              : "border-neutral-200 bg-white hover:border-neutral-400"
-                          } ${
-                            isOutOfStock
-                              ? "cursor-not-allowed opacity-50"
-                              : ""
-                          }`}
-                        >
-
-                          <div>
-
-                            <p className="font-medium">
-                              {
-                                variant.name
-                              }
-                            </p>
-
-                            <p
-                              className={`text-sm ${
-                                isSelected
-                                  ? "text-neutral-300"
-                                  : "text-neutral-500"
-                              }`}
-                            >
-                              {
-                                variant.value
-                              }
-                            </p>
-
-                            <p
-                              className={`mt-1 text-xs ${
-                                isSelected
-                                  ? "text-neutral-300"
-                                  : "text-neutral-400"
-                              }`}
-                            >
-                              SKU:{" "}
-                              {
-                                variant.sku
-                              }
-                            </p>
-
-                          </div>
-
-                          <span className="text-sm">
-
-                            {isOutOfStock
-                              ? "Out of stock"
-                              : `${variantStock} available`}
-
+                          <span
+                            className={`block text-sm ${
+                              isSelected ? "text-neutral-300" : "text-neutral-600"
+                            }`}
+                          >
+                            {variant.value}
                           </span>
 
-                        </button>
-                      );
-                    },
-                  )}
+                          <span
+                            className={`mt-1 block text-xs ${
+                              isSelected ? "text-neutral-300" : "text-neutral-500"
+                            }`}
+                          >
+                            SKU: {variant.sku}
+                          </span>
+                        </span>
 
+                        <span className="text-sm">
+                          {isOutOfStock
+                            ? "Out of stock"
+                            : `${variantStock} available`}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
-
-
-                {/* SELECTED VARIANT */}
-
-                {selectedVariant && (
-                  <div className="mt-4 rounded-lg bg-neutral-50 p-3 text-sm">
-
-                    <span className="font-medium">
-                      Selected:
-                    </span>{" "}
-
-                    {
-                      selectedVariant.name
-                    }
-
-                    :{" "}
-
-                    {
-                      selectedVariant.value
-                    }
-
-                  </div>
-                )}
-
-              </div>
+              </fieldset>
             )}
 
-
-            {/* QUANTITY */}
-
+            {/* Quantity */}
             {selectedVariant && (
-              <div className="mt-6">
-
-                <h3 className="font-semibold">
+              <div className="mt-8">
+                <p className="text-lg [font-family:var(--font-serif)]">
                   Quantity
-                </h3>
+                </p>
 
-                <div className="mt-3 inline-flex items-center overflow-hidden rounded-lg border border-neutral-200">
-
+                <div className="mt-3 inline-flex items-center border">
                   <button
                     type="button"
-                    onClick={
-                      decreaseQuantity
-                    }
-                    disabled={
-                      quantity <= 1
-                    }
-                    className="p-3 hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-40"
+                    aria-label="Decrease quantity"
+                    onClick={decreaseQuantity}
+                    disabled={quantity <= 1}
+                    className={quantityButtonClass}
                   >
-                    <Minus
-                      size={16}
-                    />
+                    <Minus size={16} />
                   </button>
 
-                  <span className="min-w-12 text-center font-medium">
+                  <span className="min-w-12 text-center" aria-live="polite">
                     {quantity}
                   </span>
 
                   <button
                     type="button"
-                    onClick={
-                      increaseQuantity
-                    }
-                    disabled={
-                      quantity >=
-                        selectedStock ||
-                      selectedStock <=
-                        0
-                    }
-                    className="p-3 hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-40"
+                    aria-label="Increase quantity"
+                    onClick={increaseQuantity}
+                    disabled={quantity >= selectedStock || selectedStock <= 0}
+                    className={quantityButtonClass}
                   >
-                    <Plus
-                      size={16}
-                    />
+                    <Plus size={16} />
                   </button>
-
                 </div>
 
-                {selectedVariant && (
-                  <p className="mt-2 text-xs text-neutral-500">
-                    Maximum available:
-                    {" "}
-                    {selectedStock}
-                  </p>
-                )}
-
+                <p className="mt-2 text-xs text-neutral-500">
+                  Maximum available: {selectedStock}
+                </p>
               </div>
             )}
 
-
-            {/* ACTIONS */}
-
-            <div className="mt-8 flex flex-wrap gap-4">
-
+            {/* Actions */}
+            <div className="mt-10 flex flex-wrap gap-4">
               <Button
-                disabled={
-                  !selectedVariant ||
-                  selectedStock <=
-                    0 ||
-                  adding ||
-                  buying ||
-                  !token
-                }
-                onClick={
-                  handleAddToCart
-                }
+                disabled={!canPurchase || adding || buying || !token}
+                onClick={handleAddToCart}
               >
-                <ShoppingCart
-                  size={18}
-                />
-
-                {adding
-                  ? "Adding..."
-                  : "Add to cart"}
+                <ShoppingCart size={18} aria-hidden="true" />
+                {adding ? "Adding…" : "Add to cart"}
               </Button>
-
 
               <Button
                 variant="secondary"
-                disabled={
-                  !selectedVariant ||
-                  selectedStock <=
-                    0 ||
-                  adding ||
-                  buying
-                }
-                onClick={
-                  handleBuyNow
-                }
+                disabled={!canPurchase || adding || buying}
+                onClick={handleBuyNow}
               >
-                {buying
-                  ? "Processing..."
-                  : "Buy now"}
+                {buying ? "Processing…" : "Buy now"}
               </Button>
-
             </div>
 
-
             {!token && (
-              <p className="mt-3 text-sm text-red-500">
-                Please login to purchase products.
+              <p className="mt-4 text-sm text-neutral-600">
+                <Link to="/login" className="text-black underline underline-offset-4">
+                  Sign in
+                </Link>{" "}
+                to add products to your cart.
               </p>
             )}
 
+            {feedback?.type === "error" && (
+              <div className="vero-error mt-6" role="alert">
+                {feedback.message}
+              </div>
+            )}
+
+            {feedback?.type === "success" && (
+              <p
+                className="mt-6 border-l-2 border-black py-2 pl-4 text-sm"
+                role="status"
+              >
+                {feedback.message}{" "}
+                <Link to="/cart" className="underline underline-offset-4">
+                  View cart
+                </Link>
+              </p>
+            )}
           </div>
-
         </div>
-
       </Container>
-
     </section>
   );
 }
-
 
 export default ProductDetailsPage;
