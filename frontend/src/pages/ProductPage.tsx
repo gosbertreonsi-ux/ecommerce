@@ -58,21 +58,23 @@ function ProductPage() {
   }, []);
 
   return (
-    <section className="py-12 sm:py-16">
+    <section className="py-12 sm:py-20">
 
       <Container>
 
-        <div className="mb-10">
+        <div className="mb-14 grid gap-6 border-b pb-10 md:grid-cols-2 md:items-end">
 
-          <p className="text-sm font-semibold uppercase tracking-widest text-neutral-500">
-            Shop
-          </p>
+          <div>
+            <p className="mb-4 text-sm text-neutral-500">
+              Shop
+            </p>
 
-          <h1 className="mt-2 text-3xl font-bold sm:text-4xl">
-            All Products
-          </h1>
+            <h1>
+              All <em>Products</em>
+            </h1>
+          </div>
 
-          <p className="mt-3 max-w-2xl text-neutral-600">
+          <p className="max-w-md text-neutral-600 md:justify-self-end">
             Discover products selected for
             quality, usefulness, and everyday value.
           </p>
@@ -88,10 +90,8 @@ function ProductPage() {
         )}
 
         {!loading && error && (
-          <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center">
-            <p className="font-medium text-red-700">
-              {error}
-            </p>
+          <div className="vero-error">
+            {error}
           </div>
         )}
 
