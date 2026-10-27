@@ -1,712 +1,361 @@
-import {
-  useEffect,
-  useState,
-} from "react";
+import { useEffect, useState } from "react";
+
+import { Link, useParams } from "react-router-dom";
 
 import {
-  useNavigate,
-  useParams,
-} from "react-router-dom";
-
-import {
+  ArrowLeft,
   CheckCircle,
+  Clock,
   CreditCard,
-  Loader2,
   Smartphone,
   Wallet,
   XCircle,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
-import Container from "../components/Container";
 import Button from "../components/Button";
+import Container from "../components/Container";
+import EmptyState from "../components/EmptyState";
+import Spinner from "../components/Spinner";
 
-import {
-  getOrderById,
-  type Order,
-} from "../api/orders.api";
+import { getOrderById, type Order } from "../api/orders.api";
 
-import {
-  simulatePayment,
-} from "../api/payments.api";
+import { simulatePayment } from "../api/payments.api";
 
 import { useAuth } from "../context/AuthContext";
 
-const PaymentPage = () => {
-  const {
-    id,
-  } = useParams<{
-    id: string;
-  }>();
+import { formatTZS, paymentMethodLabel } from "../utils/format";
 
-  const navigate =
-    useNavigate();
+type PaymentStatus = "SUCCESS" | "FAILED" | "REFUNDED" | "PENDING";
 
-  const {
-    token,
-  } = useAuth();
+const STATUS_CONTENT: Record<
+  PaymentStatus,
+  { title: string; message: string; icon: LucideIcon; danger?: boolean }
+> = {
+  SUCCESS: {
+    title: "Payment successful",
+    message: "Your payment has been processed.",
+    icon: CheckCircle,
+  },
+  FAILED: {
+    title: "Payment failed",
+    message: "The payment could not be completed. You can try again.",
+    icon: XCircle,
+    danger: true,
+  },
+  REFUNDED: {
+    title: "Payment refunded",
+    message: "This payment has been refunded.",
+    icon: Wallet,
+  },
+  PENDING: {
+    title: "Payment pending",
+    message: "Your payment has not been completed yet.",
+    icon: Clock,
+  },
+};
 
-  const [
-    order,
-    setOrder,
-  ] = useState<Order | null>(
-    null,
-  );
+const METHOD_ICON: Record<string, LucideIcon> = {
+  CARD: CreditCard,
+  MOBILE_MONEY: Smartphone,
+  CASH: Wallet,
+};
 
-  const [
-    loading,
-    setLoading,
-  ] = useState(true);
+const METHOD_NOTE: Record<string, string> = {
+  CASH: "Confirm the cash payment below once the money has been received.",
+  CARD: "Card processing is simulated for development.",
+  MOBILE_MONEY: "Mobile money processing is simulated for development.",
+};
 
-  const [
-    processing,
-    setProcessing,
-  ] = useState(false);
+function PaymentPage() {
+  const { id } = useParams<{ id: string }>();
 
-  const [
-    error,
-    setError,
-  ] = useState<string | null>(
-    null,
-  );
+  const { token } = useAuth();
 
-  const orderId =
-    Number(id);
+  const [order, setOrder] = useState<Order | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [processing, setProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const orderId = Number(id);
 
   useEffect(() => {
-    const loadOrder =
-      async () => {
-        if (
-          !token ||
-          !Number.isInteger(
-            orderId,
-          ) ||
-          orderId <= 0
-        ) {
-          setLoading(false);
+    if (!token || !Number.isInteger(orderId) || orderId <= 0) {
+      setLoading(false);
+      setError("Invalid order.");
+      return;
+    }
 
-          setError(
-            "Invalid order.",
-          );
+    let cancelled = false;
 
-          return;
-        }
-
-        try {
-          setLoading(true);
-
-          setError(null);
-
-          const response =
-            await getOrderById(
-              token,
-              orderId,
-            );
-
-          setOrder(
-            response.data,
-          );
-        } catch (
-          err
-        ) {
-          setError(
-            err instanceof Error
-              ? err.message
-              : "Failed to load payment.",
-          );
-        } finally {
-          setLoading(false);
-        }
-      };
-
-    loadOrder();
-  }, [
-    token,
-    orderId,
-  ]);
-
-  const handlePayment =
-    async (
-      status:
-        | "SUCCESS"
-        | "FAILED",
-    ) => {
-      if (
-        !token ||
-        !order ||
-        !order.payment
-      ) {
-        return;
-      }
-
+    const loadOrder = async () => {
       try {
-        setProcessing(true);
-
+        setLoading(true);
         setError(null);
 
-        const transactionId =
-          status === "SUCCESS"
-            ? `TEST-${Date.now()}`
-            : null;
+        const response = await getOrderById(token, orderId);
 
-        const response =
-          await simulatePayment(
-            token,
-            order.payment.id,
-            status,
-            transactionId,
-          );
+        if (!cancelled) setOrder(response.data);
+      } catch (err) {
+        if (cancelled) return;
 
-        setOrder(
-          (
-            currentOrder,
-          ) => {
-            if (
-              !currentOrder ||
-              !currentOrder.payment
-            ) {
-              return currentOrder;
-            }
-
-            return {
-              ...currentOrder,
-
-              status:
-                status ===
-                "SUCCESS"
-                  ? "PAID"
-                  : status ===
-                      "FAILED"
-                    ? "PENDING"
-                    : currentOrder.status,
-
-              payment: {
-                ...currentOrder.payment,
-
-                id:
-                  response.data.id,
-
-                amount:
-                  response.data.amount,
-
-                method:
-                  response.data.method,
-
-                status:
-                  response.data.status,
-
-                orderId:
-                  response.data.orderId,
-
-                transactionId:
-                  response.data
-                    .transactionId,
-
-                createdAt:
-                  response.data
-                    .createdAt,
-
-                updatedAt:
-                  response.data
-                    .updatedAt,
-
-                deletedAt:
-                  response.data
-                    .deletedAt,
-              },
-            };
-          },
-        );
-      } catch (
-        err
-      ) {
-        setError(
-          err instanceof Error
-            ? err.message
-            : "Payment processing failed.",
-        );
+        setError(err instanceof Error ? err.message : "Failed to load payment.");
       } finally {
-        setProcessing(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
-  const getPaymentIcon =
-    () => {
-      if (
-        !order?.payment
-      ) {
-        return (
-          <Wallet
-            className="h-7 w-7"
-          />
-        );
-      }
+    void loadOrder();
 
-      if (
-        order.payment.method ===
-        "CARD"
-      ) {
-        return (
-          <CreditCard
-            className="h-7 w-7"
-          />
-        );
-      }
+    return () => {
+      cancelled = true;
+    };
+  }, [token, orderId]);
 
-      if (
-        order.payment.method ===
-        "MOBILE_MONEY"
-      ) {
-        return (
-          <Smartphone
-            className="h-7 w-7"
-          />
-        );
-      }
+  const handlePayment = async (status: "SUCCESS" | "FAILED") => {
+    if (!token || !order || !order.payment) return;
 
-      return (
-        <Wallet
-          className="h-7 w-7"
-        />
+    try {
+      setProcessing(true);
+      setError(null);
+
+      const transactionId = status === "SUCCESS" ? `TEST-${Date.now()}` : null;
+
+      const response = await simulatePayment(
+        token,
+        order.payment.id,
+        status,
+        transactionId,
       );
-    };
 
-  const getStatusContent =
-    () => {
-      if (
-        !order?.payment
-      ) {
-        return null;
-      }
+      setOrder((currentOrder) => {
+        if (!currentOrder || !currentOrder.payment) return currentOrder;
 
-      switch (
-        order.payment.status
-      ) {
-        case "SUCCESS":
-          return (
-            <div className="rounded-2xl border border-green-200 bg-green-50 p-6 text-center">
-              <CheckCircle className="mx-auto mb-4 h-14 w-14 text-green-600" />
+        return {
+          ...currentOrder,
 
-              <h2 className="text-2xl font-bold text-green-800">
-                Payment Successful
-              </h2>
+          status: status === "SUCCESS" ? "PAID" : "PENDING",
 
-              <p className="mt-2 text-green-700">
-                Your payment has been
-                successfully
-                processed.
-              </p>
-
-              {order.payment
-                .transactionId && (
-                <div className="mt-4 rounded-xl bg-white p-4">
-                  <p className="text-sm text-gray-500">
-                    Transaction ID
-                  </p>
-
-                  <p className="mt-1 font-mono font-semibold text-gray-900">
-                    {
-                      order.payment
-                        .transactionId
-                    }
-                  </p>
-                </div>
-              )}
-            </div>
-          );
-
-        case "FAILED":
-          return (
-            <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center">
-              <XCircle className="mx-auto mb-4 h-14 w-14 text-red-600" />
-
-              <h2 className="text-2xl font-bold text-red-800">
-                Payment Failed
-              </h2>
-
-              <p className="mt-2 text-red-700">
-                The payment could not
-                be completed. You can
-                try again.
-              </p>
-            </div>
-          );
-
-        case "REFUNDED":
-          return (
-            <div className="rounded-2xl border border-yellow-200 bg-yellow-50 p-6 text-center">
-              <Wallet className="mx-auto mb-4 h-14 w-14 text-yellow-600" />
-
-              <h2 className="text-2xl font-bold text-yellow-800">
-                Payment Refunded
-              </h2>
-
-              <p className="mt-2 text-yellow-700">
-                This payment has been
-                refunded.
-              </p>
-            </div>
-          );
-
-        case "PENDING":
-          return (
-            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-6 text-center">
-              <Loader2 className="mx-auto mb-4 h-14 w-14 text-gray-600" />
-
-              <h2 className="text-2xl font-bold text-gray-800">
-                Payment Pending
-              </h2>
-
-              <p className="mt-2 text-gray-600">
-                Your payment has not
-                been completed yet.
-              </p>
-            </div>
-          );
-
-        default:
-          return null;
-      }
-    };
+          payment: {
+            ...currentOrder.payment,
+            id: response.data.id,
+            amount: response.data.amount,
+            method: response.data.method,
+            status: response.data.status,
+            orderId: response.data.orderId,
+            transactionId: response.data.transactionId,
+            createdAt: response.data.createdAt,
+            updatedAt: response.data.updatedAt,
+            deletedAt: response.data.deletedAt,
+          },
+        };
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Payment processing failed.");
+    } finally {
+      setProcessing(false);
+    }
+  };
 
   if (loading) {
-    return (
-      <Container>
-        <div className="flex min-h-[60vh] items-center justify-center">
-          <div className="text-center">
-            <Loader2 className="mx-auto h-10 w-10 animate-spin text-gray-600" />
-
-            <p className="mt-4 text-gray-600">
-              Loading payment...
-            </p>
-          </div>
-        </div>
-      </Container>
-    );
+    return <Spinner label="Loading payment…" />;
   }
 
   if (error || !order) {
     return (
-      <Container>
-        <div className="mx-auto max-w-xl py-16 text-center">
-          <XCircle className="mx-auto h-14 w-14 text-red-500" />
-
-          <h1 className="mt-4 text-2xl font-bold text-gray-900">
-            Unable to load payment
-          </h1>
-
-          <p className="mt-2 text-gray-600">
-            {error ||
-              "Order not found."}
-          </p>
-
-          <Button
-            className="mt-6"
-            onClick={() =>
-              navigate(
-                "/orders",
-              )
-            }
-          >
-            Back to my orders
-          </Button>
-        </div>
-      </Container>
+      <EmptyState
+        title={
+          <>
+            Unable to load <em>payment</em>
+          </>
+        }
+        message={error || "Order not found."}
+      >
+        <Link to="/orders" className="vero-btn">
+          Back to my orders
+        </Link>
+      </EmptyState>
     );
   }
 
   if (!order.payment) {
     return (
-      <Container>
-        <div className="mx-auto max-w-xl py-16 text-center">
-          <Wallet className="mx-auto h-14 w-14 text-gray-500" />
-
-          <h1 className="mt-4 text-2xl font-bold text-gray-900">
-            Payment unavailable
-          </h1>
-
-          <p className="mt-2 text-gray-600">
-            This order does not have a
-            payment record.
-          </p>
-
-          <Button
-            className="mt-6"
-            onClick={() =>
-              navigate(
-                `/orders/${order.id}`,
-              )
-            }
-          >
-            View Order
-          </Button>
-        </div>
-      </Container>
+      <EmptyState
+        title={
+          <>
+            Payment <em>unavailable</em>
+          </>
+        }
+        message="This order does not have a payment record."
+      >
+        <Link to={`/orders/${order.id}`} className="vero-btn">
+          View order
+        </Link>
+      </EmptyState>
     );
   }
 
-  const paymentIsPending =
-    order.payment.status ===
-    "PENDING";
+  const { payment } = order;
 
-  const paymentIsComplete =
-    order.payment.status ===
-      "SUCCESS" ||
-    order.payment.status ===
-      "FAILED" ||
-    order.payment.status ===
-      "REFUNDED";
+  const orderPath = `/orders/${order.id}`;
+  const methodName = paymentMethodLabel(payment.method);
+  const MethodIcon = METHOD_ICON[payment.method] ?? Wallet;
+  const status = STATUS_CONTENT[payment.status as PaymentStatus];
+  const StatusIcon = status?.icon;
+
+  const isPending = payment.status === "PENDING";
+  const isSettled =
+    payment.status === "SUCCESS" ||
+    payment.status === "FAILED" ||
+    payment.status === "REFUNDED";
 
   return (
-    <Container>
-      <div className="mx-auto max-w-4xl py-10">
-        <div className="mb-8">
-          <button
-            type="button"
-            onClick={() =>
-              navigate(
-                `/orders/${order.id}`,
-              )
-            }
-            className="mb-4 text-sm font-medium text-gray-600 transition hover:text-gray-900"
+    <section className="py-12 sm:py-16">
+      <Container>
+        <div className="mx-auto max-w-4xl">
+          <Link
+            to={orderPath}
+            className="mb-8 inline-flex items-center gap-2 text-sm text-neutral-600 hover:text-black hover:underline"
           >
-            ← Back to order
-          </button>
+            <ArrowLeft size={16} aria-hidden="true" />
+            Back to order
+          </Link>
 
-          <h1 className="text-3xl font-bold text-gray-900">
-            Payment
-          </h1>
+          <div className="mb-12 border-b pb-8">
+            <h1>
+              Order <em>payment</em>
+            </h1>
 
-          <p className="mt-2 text-gray-600">
-            Order{" "}
-            <span className="font-semibold text-gray-900">
-              {order.orderNumber}
-            </span>
-          </p>
-        </div>
-
-        <div className="grid gap-6 lg:grid-cols-3">
-          <div className="space-y-6 lg:col-span-2">
-            {getStatusContent()}
-
-            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-              <div className="flex items-center gap-4">
-                <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gray-100 text-gray-700">
-                  {getPaymentIcon()}
-                </div>
-
-                <div>
-                  <p className="text-sm text-gray-500">
-                    Payment Method
-                  </p>
-
-                  <h2 className="text-xl font-semibold text-gray-900">
-                    {order.payment.method ===
-                    "MOBILE_MONEY"
-                      ? "Mobile Money"
-                      : order.payment.method ===
-                          "CARD"
-                        ? "Card"
-                        : "Cash on Delivery"}
-                  </h2>
-                </div>
-              </div>
-
-              {paymentIsPending && (
-                <div className="mt-6">
-                  {order.payment.method ===
-                    "CASH" && (
-                    <div className="mb-5 rounded-xl border border-blue-200 bg-blue-50 p-4">
-                      <p className="font-semibold text-blue-900">
-                        Cash on Delivery
-                      </p>
-
-                      <p className="mt-1 text-sm text-blue-700">
-                        Confirm the cash payment
-                        below when the payment is
-                        received.
-                      </p>
-                    </div>
-                  )}
-
-                  {order.payment.method ===
-                    "CARD" && (
-                    <div className="mb-5 rounded-xl border border-purple-200 bg-purple-50 p-4">
-                      <p className="font-semibold text-purple-900">
-                        Card Payment
-                      </p>
-
-                      <p className="mt-1 text-sm text-purple-700">
-                        Card processing is
-                        currently simulated for
-                        development.
-                      </p>
-                    </div>
-                  )}
-
-                  {order.payment.method ===
-                    "MOBILE_MONEY" && (
-                    <div className="mb-5 rounded-xl border border-orange-200 bg-orange-50 p-4">
-                      <p className="font-semibold text-orange-900">
-                        Mobile Money
-                      </p>
-
-                      <p className="mt-1 text-sm text-orange-700">
-                        Mobile money processing is
-                        currently simulated for
-                        development.
-                      </p>
-                    </div>
-                  )}
-
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <Button
-                      className="w-full"
-                      onClick={() =>
-                        handlePayment(
-                          "SUCCESS",
-                        )
-                      }
-                      disabled={
-                        processing
-                      }
-                    >
-                      {processing ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-
-                          Processing...
-                        </>
-                      ) : (
-                        "Simulate Success"
-                      )}
-                    </Button>
-
-                    <Button
-                      className="w-full"
-                      variant="secondary"
-                      onClick={() =>
-                        handlePayment(
-                          "FAILED",
-                        )
-                      }
-                      disabled={
-                        processing
-                      }
-                    >
-                      Simulate Failure
-                    </Button>
-                  </div>
-
-                  <p className="mt-4 text-center text-xs text-gray-500">
-                    Development mode: card and
-                    mobile money payments are
-                    simulated. No real payment is
-                    processed.
-                  </p>
-                </div>
-              )}
-
-              {paymentIsComplete && (
-                <div className="mt-6">
-                  <Button
-                    className="w-full"
-                    onClick={() =>
-                      navigate(
-                        `/orders/${order.id}`,
-                      )
-                    }
-                  >
-                    View Order Details
-                  </Button>
-                </div>
-              )}
-            </div>
-
-            {error && (
-              <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-                {error}
-              </div>
-            )}
+            <p className="mt-4 text-neutral-600">Order {order.orderNumber}</p>
           </div>
 
-          <aside className="h-fit rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-gray-900">
-              Payment Summary
-            </h2>
+          <div className="grid gap-8 lg:grid-cols-3">
+            <div className="space-y-8 lg:col-span-2">
+              {status && StatusIcon && (
+                <div
+                  role="status"
+                  className="flex items-start gap-4 border bg-white p-6 sm:p-8"
+                >
+                  <StatusIcon
+                    size={28}
+                    aria-hidden="true"
+                    className={`shrink-0 ${
+                      status.danger ? "text-[color:var(--danger)]" : ""
+                    }`}
+                  />
 
-            <div className="mt-5 space-y-4">
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-gray-600">
-                  Order
-                </span>
+                  <div>
+                    <h2>{status.title}</h2>
 
-                <span className="font-medium text-gray-900">
-                  {order.orderNumber}
-                </span>
-              </div>
+                    <p className="mt-2 text-neutral-600">{status.message}</p>
 
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-gray-600">
-                  Method
-                </span>
-
-                <span className="font-medium text-gray-900">
-                  {order.payment.method ===
-                  "MOBILE_MONEY"
-                    ? "Mobile Money"
-                    : order.payment.method ===
-                        "CARD"
-                      ? "Card"
-                      : "Cash"}
-                </span>
-              </div>
-
-              <div className="border-t border-gray-200 pt-4">
-                <div className="flex items-center justify-between gap-4">
-                  <span className="text-lg font-semibold text-gray-900">
-                    Total
-                  </span>
-
-                  <span className="text-xl font-bold text-gray-900">
-                    TSh{" "}
-                    {Number(
-                      order.payment.amount,
-                    ).toLocaleString()}
-                  </span>
+                    {payment.status === "SUCCESS" && payment.transactionId && (
+                      <p className="mt-4 text-sm text-neutral-500">
+                        Transaction ID
+                        <span className="mt-1 block break-all font-mono text-black">
+                          {payment.transactionId}
+                        </span>
+                      </p>
+                    )}
+                  </div>
                 </div>
+              )}
+
+              <div className="border bg-white p-6 sm:p-8">
+                <div className="flex items-center gap-4">
+                  <MethodIcon size={28} aria-hidden="true" />
+
+                  <div>
+                    <p className="text-sm text-neutral-500">Payment method</p>
+
+                    <h2>{methodName}</h2>
+                  </div>
+                </div>
+
+                {isPending && (
+                  <div className="mt-8">
+                    {METHOD_NOTE[payment.method] && (
+                      <p className="mb-6 border-l-2 border-black py-1 pl-4 text-sm text-neutral-600">
+                        {METHOD_NOTE[payment.method]}
+                      </p>
+                    )}
+
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <Button
+                        className="w-full"
+                        onClick={() => handlePayment("SUCCESS")}
+                        disabled={processing}
+                      >
+                        {processing ? "Processing…" : "Simulate success"}
+                      </Button>
+
+                      <Button
+                        className="w-full"
+                        variant="secondary"
+                        onClick={() => handlePayment("FAILED")}
+                        disabled={processing}
+                      >
+                        Simulate failure
+                      </Button>
+                    </div>
+
+                    <p className="mt-4 text-center text-xs text-neutral-500">
+                      Development mode: no real payment is processed.
+                    </p>
+                  </div>
+                )}
+
+                {isSettled && (
+                  <Link to={orderPath} className="vero-btn mt-8 w-full">
+                    View order details
+                  </Link>
+                )}
               </div>
+
+              {error && (
+                <div className="vero-error" role="alert">
+                  {error}
+                </div>
+              )}
             </div>
 
-            {paymentIsPending && (
-              <div className="mt-6 rounded-xl bg-gray-50 p-4">
-                <p className="text-sm font-medium text-gray-900">
-                  Payment Status
-                </p>
+            <aside className="h-fit border bg-white p-6 sm:p-8">
+              <h2>Payment summary</h2>
 
-                <p className="mt-1 text-sm text-gray-600">
-                  Waiting for payment
-                  confirmation.
-                </p>
-              </div>
-            )}
+              <dl className="mt-6 space-y-4 text-sm">
+                <div className="flex justify-between gap-4">
+                  <dt className="text-neutral-600">Order</dt>
+                  <dd>{order.orderNumber}</dd>
+                </div>
 
-            {paymentIsComplete && (
-              <Button
-                className="mt-6 w-full"
-                onClick={() =>
-                  navigate(
-                    `/orders/${order.id}`,
-                  )
-                }
-              >
-                View Order
-              </Button>
-            )}
-          </aside>
+                <div className="flex justify-between gap-4">
+                  <dt className="text-neutral-600">Method</dt>
+                  <dd>{methodName}</dd>
+                </div>
+
+                <div className="flex justify-between gap-4 border-t pt-4 text-base">
+                  <dt>Total</dt>
+                  <dd className="text-xl">{formatTZS(payment.amount)}</dd>
+                </div>
+              </dl>
+
+              {isPending && (
+                <p className="mt-6 text-sm text-neutral-600">
+                  Waiting for payment confirmation.
+                </p>
+              )}
+
+              {isSettled && (
+                <Link to={orderPath} className="vero-btn vero-btn--ghost mt-6 w-full">
+                  View order
+                </Link>
+              )}
+            </aside>
+          </div>
         </div>
-      </div>
-    </Container>
+      </Container>
+    </section>
   );
-};
+}
 
 export default PaymentPage;
