@@ -12,7 +12,6 @@ import {
 } from "react-router-dom";
 
 import Container from "../components/Container";
-import Button from "../components/Button";
 
 import {
   register,
@@ -79,149 +78,137 @@ function RegisterPage() {
 
 
   return (
-    <section className="py-16">
+    <section className="py-16 sm:py-24">
 
       <Container>
 
-        <div className="mx-auto max-w-md">
+        <div className="grid gap-14 md:grid-cols-2 md:items-end">
 
-          <h1 className="text-3xl font-bold">
-            Create your account
-          </h1>
+          <div>
+            <h1>
+              Create your <em>account</em>
+            </h1>
 
-          <p className="mt-2 text-neutral-600">
-            Join E-Shop and start shopping.
-          </p>
-
-
-          {error && (
-            <div className="mt-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-              {error}
-            </div>
-          )}
+            <p className="mt-6 text-neutral-600">
+              Join E-Shop and start shopping.
+            </p>
+          </div>
 
 
-          <form
-            onSubmit={handleSubmit}
-            className="mt-8 space-y-5"
-          >
+          <div className="max-w-md">
 
-            {/* First name */}
-
-            <div>
-
-              <label className="mb-2 block text-sm font-medium">
-                First name
-              </label>
-
-              <input
-                type="text"
-                value={firstName}
-                onChange={(event) =>
-                  setFirstName(event.target.value)
-                }
-                required
-                className="w-full rounded-lg border border-neutral-300 px-4 py-3 outline-none focus:border-black"
-                placeholder="John"
-              />
-
-            </div>
+            {error && (
+              <div className="vero-error mb-8">
+                {error}
+              </div>
+            )}
 
 
-            {/* Last name */}
-
-            <div>
-
-              <label className="mb-2 block text-sm font-medium">
-                Last name
-              </label>
-
-              <input
-                type="text"
-                value={lastName}
-                onChange={(event) =>
-                  setLastName(event.target.value)
-                }
-                required
-                className="w-full rounded-lg border border-neutral-300 px-4 py-3 outline-none focus:border-black"
-                placeholder="Doe"
-              />
-
-            </div>
-
-
-            {/* Email */}
-
-            <div>
-
-              <label className="mb-2 block text-sm font-medium">
-                Email
-              </label>
-
-              <input
-                type="email"
-                value={email}
-                onChange={(event) =>
-                  setEmail(event.target.value)
-                }
-                required
-                className="w-full rounded-lg border border-neutral-300 px-4 py-3 outline-none focus:border-black"
-                placeholder="you@example.com"
-              />
-
-            </div>
-
-
-            {/* Password */}
-
-            <div>
-
-              <label className="mb-2 block text-sm font-medium">
-                Password
-              </label>
-
-              <input
-                type="password"
-                value={password}
-                onChange={(event) =>
-                  setPassword(event.target.value)
-                }
-                required
-                minLength={6}
-                className="w-full rounded-lg border border-neutral-300 px-4 py-3 outline-none focus:border-black"
-                placeholder="••••••••"
-              />
-
-            </div>
-
-
-            {/* Submit */}
-
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={loading}
+            <form
+              onSubmit={handleSubmit}
+              className="space-y-8"
             >
-              {loading
-                ? "Creating account..."
-                : "Create account"}
-            </Button>
 
-          </form>
+              <div>
+                <label className="vero-label">
+                  First name
+                </label>
+
+                <input
+                  type="text"
+                  value={firstName}
+                  onChange={(event) =>
+                    setFirstName(event.target.value)
+                  }
+                  required
+                  className="vero-input"
+                  placeholder="John"
+                />
+              </div>
 
 
-          <p className="mt-6 text-center text-sm text-neutral-600">
+              <div>
+                <label className="vero-label">
+                  Last name
+                </label>
 
-            Already have an account?{" "}
+                <input
+                  type="text"
+                  value={lastName}
+                  onChange={(event) =>
+                    setLastName(event.target.value)
+                  }
+                  required
+                  className="vero-input"
+                  placeholder="Doe"
+                />
+              </div>
 
-            <Link
-              to="/login"
-              className="font-semibold text-black hover:underline"
-            >
-              Sign in
-            </Link>
 
-          </p>
+              <div>
+                <label className="vero-label">
+                  Email
+                </label>
+
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(event) =>
+                    setEmail(event.target.value)
+                  }
+                  required
+                  className="vero-input"
+                  placeholder="you@example.com"
+                />
+              </div>
+
+
+              <div>
+                <label className="vero-label">
+                  Password
+                </label>
+
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(event) =>
+                    setPassword(event.target.value)
+                  }
+                  required
+                  minLength={6}
+                  className="vero-input"
+                  placeholder="••••••••"
+                />
+              </div>
+
+
+              <button
+                type="submit"
+                className="vero-btn w-full"
+                disabled={loading}
+              >
+                {loading
+                  ? "Creating account..."
+                  : "Create account"}
+              </button>
+
+            </form>
+
+
+            <p className="mt-8 text-sm text-neutral-600">
+
+              Already have an account?{" "}
+
+              <Link
+                to="/login"
+                className="font-semibold text-black underline underline-offset-4"
+              >
+                Sign in
+              </Link>
+
+            </p>
+
+          </div>
 
         </div>
 
@@ -230,6 +217,5 @@ function RegisterPage() {
     </section>
   );
 }
-
 
 export default RegisterPage;
