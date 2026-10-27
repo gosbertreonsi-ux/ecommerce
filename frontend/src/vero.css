@@ -1,47 +1,222 @@
 @import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Inter:wght@400;500;600&display=swap");
 
-:root{
-  --paper:#f7f4ef; --card:#fdfbf8; --ink:#1c1a17; --ink-soft:#3a362f;
-  --muted:#6f6a62; --line:#ddd7cc;
+/* =========================================================
+   1. Tokens
+   ========================================================= */
+:root {
+  --paper: #f7f4ef;
+  --paper-deep: #efeae2;
+  --card: #fdfbf8;
+  --ink: #1c1a17;
+  --ink-soft: #3a362f;
+  --on-ink: #fbf9f5;
+  --muted: #6f6a62;
+  --line: #ddd7cc;
+  --danger: #8a2b1f;
+
+  --font-serif: "Cormorant Garamond", Georgia, serif;
+  --font-sans: Inter, system-ui, sans-serif;
+
+  --ease: 250ms ease;
+  color-scheme: light;
 }
-html{scroll-behavior:smooth}
-body{background:var(--paper);color:var(--ink);font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
-h1,h2,h3{font-family:"Cormorant Garamond",Georgia,serif;font-weight:500;letter-spacing:-.015em;line-height:1.05}
-h1{font-size:clamp(2.4rem,6vw,4.5rem)}
-h2{font-size:clamp(1.4rem,2.4vw,1.9rem)}
-h1 em,h2 em,.serif-italic{font-style:italic;font-weight:400}
-:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
 
-/* ---- re-skin existing Tailwind classes (no page logic touched) ---- */
-.bg-gray-50,.bg-neutral-50{background-color:var(--paper)!important}
-.bg-white{background-color:var(--card)!important}
-.bg-gray-100,.bg-neutral-100{background-color:#efeae2!important}
-.bg-black,.bg-gray-900,.bg-neutral-900{background-color:var(--ink)!important;color:#fbf9f5}
-.hover\:bg-gray-800:hover,.hover\:bg-gray-700:hover,.hover\:bg-neutral-800:hover{background-color:var(--ink-soft)!important}
-.text-gray-900,.text-neutral-900{color:var(--ink)}
-.text-gray-500,.text-gray-600,.text-gray-700,.text-neutral-400,.text-neutral-500,.text-neutral-600,.text-neutral-700{color:var(--muted)}
-.border,.border-b,.border-t,.border-gray-200,.border-neutral-200,.border-neutral-300,.divide-y>*+*,.divide-neutral-200>*+*{border-color:var(--line)!important}
-.border-black,.border-neutral-900{border-color:var(--ink)!important}
-.rounded-lg,.rounded-xl,.rounded-2xl,.rounded-md{border-radius:2px!important}
-.shadow-sm,.shadow-2xl,.hover\:shadow-sm:hover{box-shadow:none!important}
-.font-bold,.font-semibold{font-weight:500}
-.uppercase{text-transform:none;letter-spacing:0}
-.aspect-square{aspect-ratio:4/5}
-button,a{transition:background-color .25s,color .25s,border-color .25s}
+/* =========================================================
+   2. Base
+   ========================================================= */
+html {
+  scroll-behavior: smooth;
+}
 
-/* ---- new building blocks ---- */
-.vero-btn{display:inline-flex;align-items:center;justify-content:center;padding:.95rem 2rem;border:1px solid var(--ink);background:var(--ink);color:#fbf9f5;font-size:.9rem;letter-spacing:.02em;cursor:pointer}
-.vero-btn:hover{background:transparent;color:var(--ink)}
-.vero-btn:disabled{opacity:.5;cursor:not-allowed}
-.vero-btn--ghost{background:transparent;color:var(--ink)}
-.vero-btn--ghost:hover{background:var(--ink);color:#fbf9f5}
-.vero-input{width:100%;background:transparent;border:0;border-bottom:1px solid var(--ink);padding:.75rem 0;font-size:1rem;outline:none;border-radius:0}
-.vero-input:focus{border-bottom-width:2px}
-.vero-label{display:block;font-size:.85rem;color:var(--muted)}
-.vero-error{border-left:2px solid #8a2b1f;padding:.5rem 1rem;color:#8a2b1f;font-size:.9rem}
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
 
-/* intro loader */
-.vero-loader{position:fixed;inset:0;z-index:100;background:var(--paper);display:flex;align-items:flex-end;justify-content:space-between;padding:2rem;transition:opacity .7s,visibility .7s}
-.vero-loader--done{opacity:0;visibility:hidden}
-.vero-loader__count{font-family:"Cormorant Garamond",serif;font-size:clamp(4rem,14vw,10rem);line-height:.8}
-@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+h1, h2, h3 {
+  font-family: var(--font-serif);
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  line-height: 1.05;
+  text-wrap: balance;
+}
+
+h1 { font-size: clamp(2.4rem, 6vw, 4.5rem); }
+h2 { font-size: clamp(1.4rem, 2.4vw, 1.9rem); }
+
+h1 em, h2 em, .serif-italic {
+  font-style: italic;
+  font-weight: 400;
+}
+
+:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+
+button, a {
+  transition:
+    background-color var(--ease),
+    color var(--ease),
+    border-color var(--ease);
+}
+
+/* =========================================================
+   3. Tailwind re-skin
+   Tailwind's utilities are unlayered, so !important is
+   required here. Keep it confined to this section.
+   ========================================================= */
+.bg-gray-50, .bg-neutral-50   { background-color: var(--paper) !important; }
+.bg-white                     { background-color: var(--card) !important; }
+.bg-gray-100, .bg-neutral-100 { background-color: var(--paper-deep) !important; }
+
+.bg-black, .bg-gray-900, .bg-neutral-900 {
+  background-color: var(--ink) !important;
+  color: var(--on-ink);
+}
+
+.text-gray-900, .text-neutral-900 { color: var(--ink) !important; }
+
+.text-gray-500, .text-gray-600, .text-gray-700,
+.text-neutral-400, .text-neutral-500, .text-neutral-600, .text-neutral-700 {
+  color: var(--muted) !important;
+}
+
+.border, .border-b, .border-t,
+.border-gray-200, .border-neutral-200, .border-neutral-300,
+.divide-y > * + *, .divide-neutral-200 > * + * {
+  border-color: var(--line) !important;
+}
+
+.border-black, .border-neutral-900 { border-color: var(--ink) !important; }
+
+.rounded-md, .rounded-lg, .rounded-xl, .rounded-2xl { border-radius: 2px !important; }
+.shadow-sm, .shadow-2xl                             { box-shadow: none !important; }
+
+.font-bold, .font-semibold { font-weight: 500; }
+.uppercase                 { text-transform: none; letter-spacing: 0; }
+.aspect-square             { aspect-ratio: 4 / 5; }
+
+/* Hover states only where hover exists (avoids sticky hover on touch) */
+@media (hover: hover) {
+  .hover\:bg-gray-800:hover,
+  .hover\:bg-gray-700:hover,
+  .hover\:bg-neutral-800:hover { background-color: var(--ink-soft) !important; }
+
+  .hover\:shadow-sm:hover { box-shadow: none !important; }
+}
+
+/* =========================================================
+   4. Components
+   ========================================================= */
+
+/* --- Buttons --- */
+.vero-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;                 /* touch target */
+  padding: 0.95rem 2rem;
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: var(--on-ink);
+  font: inherit;                    /* <button> doesn't inherit by default */
+  font-size: 0.9rem;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+}
+
+.vero-btn--ghost {
+  background: transparent;
+  color: var(--ink);
+}
+
+.vero-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (hover: hover) {
+  .vero-btn:not(:disabled):hover {
+    background: transparent;
+    color: var(--ink);
+  }
+  .vero-btn--ghost:not(:disabled):hover {
+    background: var(--ink);
+    color: var(--on-ink);
+  }
+}
+
+/* --- Form fields --- */
+.vero-label {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.vero-input {
+  width: 100%;
+  padding: 0.75rem 0;
+  border: 0;
+  border-bottom: 1px solid var(--ink);
+  border-radius: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 1rem;                  /* 16px+ prevents iOS zoom on focus */
+  outline: none;
+  transition: box-shadow var(--ease);
+}
+
+/* Thicken the underline with box-shadow so the layout doesn't shift */
+.vero-input:focus-visible {
+  box-shadow: 0 1px 0 0 var(--ink);
+}
+
+.vero-error {
+  padding: 0.5rem 1rem;
+  border-left: 2px solid var(--danger);
+  color: var(--danger);
+  font-size: 0.9rem;
+}
+
+/* --- Intro loader --- */
+.vero-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 2rem;
+  background: var(--paper);
+  transition: opacity 700ms ease, visibility 700ms ease;
+}
+
+.vero-loader--done {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;             /* never block clicks once finished */
+}
+
+.vero-loader__count {
+  font-family: var(--font-serif);
+  font-size: clamp(4rem, 14vw, 10rem);
+  line-height: 0.8;
+  font-variant-numeric: tabular-nums; /* stops the counter from jittering */
+}
+
+/* =========================================================
+   5. Accessibility
+   ========================================================= */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
