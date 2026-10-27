@@ -19,9 +19,7 @@ import adminRoutes from "./modules/admin/admin.routes";
 
 const app = express();
 
-// ========================================
 // Security
-// ========================================
 
 app.use(
   cors(),
@@ -35,9 +33,7 @@ app.use(
   }),
 );
 
-// ========================================
 // Performance / Logging
-// ========================================
 
 app.use(
   compression(),
