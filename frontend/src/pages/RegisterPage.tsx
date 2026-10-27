@@ -1,89 +1,47 @@
-import {
-  useState,
-} from "react";
+import { useState } from "react";
+import type { FormEvent } from "react";
 
-import type {
-  FormEvent,
-} from "react";
-
-import {
-  Link,
-  useNavigate,
-} from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import Container from "../components/Container";
+import { register } from "../api/auth.api";
 
-import {
-  register,
-} from "../api/auth.api";
-
+type ApiError = { response?: { data?: { message?: string } } };
 
 function RegisterPage() {
-
   const navigate = useNavigate();
 
-  const [firstName, setFirstName] =
-    useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const [lastName, setLastName] =
-    useState("");
-
-  const [email, setEmail] =
-    useState("");
-
-  const [password, setPassword] =
-    useState("");
-
-  const [loading, setLoading] =
-    useState(false);
-
-  const [error, setError] =
-    useState("");
-
-
-  const handleSubmit = async (
-    event: FormEvent<HTMLFormElement>
-  ) => {
-
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     setError("");
     setLoading(true);
 
     try {
-
-      await register({
-        firstName,
-        lastName,
-        email,
-        password,
-      });
+      await register({ firstName, lastName, email, password });
 
       navigate("/login");
-
-    } catch (error: any) {
-
-      const message =
-        error?.response?.data?.message ||
-        "Registration failed. Please try again.";
-
-      setError(message);
-
+    } catch (err) {
+      setError(
+        (err as ApiError)?.response?.data?.message ||
+          "Registration failed. Please try again.",
+      );
     } finally {
-
       setLoading(false);
-
     }
   };
 
-
   return (
     <section className="py-16 sm:py-24">
-
       <Container>
-
         <div className="grid gap-14 md:grid-cols-2 md:items-end">
-
           <div>
             <h1>
               Create your <em>account</em>
@@ -94,126 +52,105 @@ function RegisterPage() {
             </p>
           </div>
 
-
           <div className="max-w-md">
-
             {error && (
-              <div className="vero-error mb-8">
+              <div className="vero-error mb-8" role="alert">
                 {error}
               </div>
             )}
 
-
-            <form
-              onSubmit={handleSubmit}
-              className="space-y-8"
-            >
-
+            <form onSubmit={handleSubmit} className="space-y-8">
               <div>
-                <label className="vero-label">
+                <label htmlFor="register-first-name" className="vero-label">
                   First name
                 </label>
 
                 <input
+                  id="register-first-name"
                   type="text"
                   value={firstName}
-                  onChange={(event) =>
-                    setFirstName(event.target.value)
-                  }
+                  onChange={(event) => setFirstName(event.target.value)}
                   required
+                  autoComplete="given-name"
                   className="vero-input"
                   placeholder="John"
                 />
               </div>
 
-
               <div>
-                <label className="vero-label">
+                <label htmlFor="register-last-name" className="vero-label">
                   Last name
                 </label>
 
                 <input
+                  id="register-last-name"
                   type="text"
                   value={lastName}
-                  onChange={(event) =>
-                    setLastName(event.target.value)
-                  }
+                  onChange={(event) => setLastName(event.target.value)}
                   required
+                  autoComplete="family-name"
                   className="vero-input"
                   placeholder="Doe"
                 />
               </div>
 
-
               <div>
-                <label className="vero-label">
+                <label htmlFor="register-email" className="vero-label">
                   Email
                 </label>
 
                 <input
+                  id="register-email"
                   type="email"
                   value={email}
-                  onChange={(event) =>
-                    setEmail(event.target.value)
-                  }
+                  onChange={(event) => setEmail(event.target.value)}
                   required
+                  autoComplete="email"
                   className="vero-input"
                   placeholder="you@example.com"
                 />
               </div>
 
-
               <div>
-                <label className="vero-label">
-                  Password
+                <label htmlFor="register-password" className="vero-label">
+                  Password (at least 6 characters)
                 </label>
 
                 <input
+                  id="register-password"
                   type="password"
                   value={password}
-                  onChange={(event) =>
-                    setPassword(event.target.value)
-                  }
+                  onChange={(event) => setPassword(event.target.value)}
                   required
                   minLength={6}
+                  autoComplete="new-password"
                   className="vero-input"
                   placeholder="••••••••"
                 />
               </div>
 
-
               <button
                 type="submit"
                 className="vero-btn w-full"
                 disabled={loading}
+                aria-busy={loading}
               >
-                {loading
-                  ? "Creating account..."
-                  : "Create account"}
+                {loading ? "Creating account…" : "Create account"}
               </button>
-
             </form>
 
-
             <p className="mt-8 text-sm text-neutral-600">
-
               Already have an account?{" "}
-
               <Link
                 to="/login"
-                className="font-semibold text-black underline underline-offset-4"
+                className="text-black underline underline-offset-4"
               >
                 Sign in
               </Link>
-
             </p>
-
           </div>
-
         </div>
-
       </Container>
-
     </section>
   );
 }
