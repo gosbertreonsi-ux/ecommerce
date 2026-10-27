@@ -1,38 +1,37 @@
-import type {
-  ButtonHTMLAttributes,
-  ReactNode,
-} from "react";
+import type { ButtonHTMLAttributes, CSSProperties, ReactNode } from "react";
 
-interface ButtonProps
-  extends ButtonHTMLAttributes<HTMLButtonElement> {
+type Variant = "primary" | "secondary" | "danger";
+
+interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode;
-  variant?: "primary" | "secondary" | "danger";
+  variant?: Variant;
 }
+
+const variantClass: Record<Variant, string> = {
+  primary: "vero-btn",
+  secondary: "vero-btn vero-btn--ghost",
+  danger: "vero-btn",
+};
+
+const dangerStyle: CSSProperties = {
+  background: "var(--danger)",
+  borderColor: "var(--danger)",
+  color: "var(--on-ink)",
+};
 
 function Button({
   children,
   variant = "primary",
   className = "",
+  type = "button",
+  style,
   ...props
 }: ButtonProps) {
-
-  const base =
-    "inline-flex items-center justify-center rounded-lg px-5 py-2.5 text-sm font-semibold transition";
-
-  const variants = {
-    primary:
-      "bg-black text-white hover:bg-neutral-800",
-
-    secondary:
-      "border border-neutral-300 bg-white text-neutral-900 hover:bg-neutral-50",
-
-    danger:
-      "bg-red-600 text-white hover:bg-red-700",
-  };
-
   return (
     <button
-      className={`${base} ${variants[variant]} ${className}`}
+      type={type}
+      className={`${variantClass[variant]} gap-2 ${className}`.trim()}
+      style={variant === "danger" ? { ...dangerStyle, ...style } : style}
       {...props}
     >
       {children}
