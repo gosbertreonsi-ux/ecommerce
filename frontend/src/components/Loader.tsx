@@ -1,37 +1,73 @@
 import { useEffect, useState } from "react";
 
 const KEY = "eshop-intro-seen";
+const DURATION = 1600;
+
+/** Skip the intro on repeat visits in a session, and for people who prefer reduced motion. */
+function shouldSkipIntro(): boolean {
+  try {
+    if (sessionStorage.getItem(KEY) === "1") {
+      return true;
+    }
+  } catch {
+    /* storage unavailable */
+  }
+
+  return window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+}
 
 function Loader() {
-  const [seen] = useState(() => {
-    try { return sessionStorage.getItem(KEY) === "1"; } catch { return false; }
-  });
-  const [count, setCount] = useState(seen ? 100 : 0);
-  const [done, setDone] = useState(seen);
+  const [skip] = useState(shouldSkipIntro);
+  const [count, setCount] = useState(0);
+  const [done, setDone] = useState(false);
+  const [gone, setGone] = useState(false);
 
   useEffect(() => {
-    if (seen) return;
-    const start = performance.now();
-    const duration = 1600;
-    let raf = 0;
-    const tick = (now: number) => {
-      const p = Math.min(1, (now - start) / duration);
-      setCount(Math.round(p * 100));
-      if (p < 1) raf = requestAnimationFrame(tick);
-      else {
-        try { sessionStorage.setItem(KEY, "1"); } catch { /* ignore */ }
-        setTimeout(() => setDone(true), 250);
-      }
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [seen]);
+    if (skip) return;
 
-  if (seen) return null;
+    const start = performance.now();
+    let raf = 0;
+    let timeout = 0;
+
+    const tick = (now: number) => {
+      const progress = Math.min(1, (now - start) / DURATION);
+
+      setCount(Math.round(progress * 100));
+
+      if (progress < 1) {
+        raf = requestAnimationFrame(tick);
+        return;
+      }
+
+      try {
+        sessionStorage.setItem(KEY, "1");
+      } catch {
+        /* storage unavailable */
+      }
+
+      timeout = window.setTimeout(() => setDone(true), 250);
+    };
+
+    raf = requestAnimationFrame(tick);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      window.clearTimeout(timeout);
+    };
+  }, [skip]);
+
+  if (skip || gone) return null;
 
   return (
-    <div className={`vero-loader ${done ? "vero-loader--done" : ""}`} aria-hidden={done}>
+    <div
+      aria-hidden="true"
+      className={`vero-loader ${done ? "vero-loader--done" : ""}`}
+      onTransitionEnd={() => {
+        if (done) setGone(true);
+      }}
+    >
       <p className="serif-italic text-2xl">E-Shop</p>
+
       <span className="vero-loader__count">{count}%</span>
     </div>
   );
