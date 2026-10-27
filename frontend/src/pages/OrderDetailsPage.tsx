@@ -359,7 +359,7 @@ function OrderDetailsPage() {
                 Placed on {orderDate}
               </p>
 
-              <h1 className="text-4xl sm:text-5xl">
+              <h1 className="vero-title">
                 Order <em>{order.orderNumber}</em>
               </h1>
             </div>

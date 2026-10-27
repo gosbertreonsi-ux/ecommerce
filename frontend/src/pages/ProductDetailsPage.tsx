@@ -258,7 +258,7 @@ function ProductDetailsPage() {
           <div className="flex flex-col justify-center">
             <p className="text-sm text-neutral-500">{product.category.name}</p>
 
-            <h1 className="mt-3 text-4xl sm:text-5xl">{product.name}</h1>
+            <h1 className="vero-title mt-3">{product.name}</h1>
 
             <p className="mt-3 text-sm text-neutral-500">SKU: {product.sku}</p>
 

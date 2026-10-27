@@ -14,7 +14,7 @@ function EmptyState({ title, message, children }: EmptyStateProps) {
     <section className="py-20 sm:py-28">
       <Container>
         <div className="mx-auto max-w-lg text-center">
-          <h1 className="text-4xl sm:text-5xl">{title}</h1>
+          <h1 className="vero-title">{title}</h1>
 
           {message && <p className="mt-4 text-neutral-600">{message}</p>}
 

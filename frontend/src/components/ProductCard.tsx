@@ -41,7 +41,7 @@ function ProductCard({ product }: ProductCardProps) {
       <div className="p-5">
         <p className="text-sm text-neutral-500">{product.category.name}</p>
 
-        <h2 className="mt-1 text-xl">
+        <h2 className="vero-title-sm mt-1">
           <Link to={href} className="hover:underline">
             {product.name}
           </Link>
