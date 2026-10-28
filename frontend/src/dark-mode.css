@@ -1,0 +1,250 @@
+/* ==========================================================
+   E-SHOP / LIQUID-SILVER DARK MODE
+   New, additive stylesheet. The light palette in vero.css is unchanged.
+   One switch controls storefront, cart, checkout, account and admin screens.
+   ========================================================== */
+
+:root[data-theme="dark"] {
+  --paper: #060608;
+  --paper-deep: #101014;
+  --card: #141418;
+  --ink: #eeedf1;
+  --ink-soft: #cccad2;
+  --on-ink: #08080b;
+  --muted: #aaa9b3;
+  --line: #303037;
+  --danger: #ff9c93;
+  color-scheme: dark;
+}
+
+:root[data-theme="dark"] body {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+/* Header switch, positioned before search & cart. */
+.esh-theme-toggle {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 64px;
+  min-height: 44px;
+  padding: 5px 1px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+  color: var(--ink);
+}
+.esh-theme-toggle__track {
+  position: relative;
+  display: block;
+  width: 62px;
+  height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--paper-deep);
+  transition: background-color 350ms ease, border-color 350ms ease;
+}
+.esh-theme-toggle__symbol {
+  position: absolute;
+  top: 8px;
+  color: var(--muted);
+}
+.esh-theme-toggle__symbol--sun { left: 7px; }
+.esh-theme-toggle__symbol--moon { right: 6px; }
+.esh-theme-toggle__thumb {
+  position: absolute;
+  left: 3px;
+  top: 3px;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #faf8f3;
+  color: #ae790e;
+  box-shadow: 0 2px 9px rgba(0,0,0,.20);
+  transition: transform 350ms cubic-bezier(.2,.8,.2,1), background-color 350ms ease;
+}
+:root[data-theme="dark"] .esh-theme-toggle__track {
+  background: #202029;
+  border-color: #50505a;
+}
+:root[data-theme="dark"] .esh-theme-toggle__thumb {
+  transform: translateX(29px);
+  background: linear-gradient(135deg, #f7f7f9, #a7a8b8);
+  color: #11111a;
+}
+.esh-theme-toggle:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+
+/* Storefront: almost pitch black, silver typography, minimal glow. */
+:root[data-theme="dark"] .esh-site-header,
+:root[data-theme="dark"] .esh-header-main,
+:root[data-theme="dark"] .esh-search-panel,
+:root[data-theme="dark"] .esh-mobile-nav {
+  background: #08080b;
+  border-color: var(--line);
+}
+:root[data-theme="dark"] .esh-utility-bar {
+  background: #020203;
+  color: #d7d7de;
+  border-bottom: 1px solid #1a1a21;
+}
+:root[data-theme="dark"] .esh-nav-link,
+:root[data-theme="dark"] .esh-header-icon,
+:root[data-theme="dark"] .esh-brand,
+:root[data-theme="dark"] .esh-search-panel__form input {
+  color: #eeedf2;
+}
+:root[data-theme="dark"] .esh-hero {
+  background: radial-gradient(ellipse at 22% 46%, #17171c 0%, #070709 60%);
+}
+:root[data-theme="dark"] .esh-story {
+  background: radial-gradient(circle at 23% 20%, #1b1b22 0%, #0b0b0e 65%);
+}
+:root[data-theme="dark"] .esh-final-note {
+  background: #050506;
+  color: #e8e8ed;
+  border-top: 1px solid #29292f;
+}
+:root[data-theme="dark"] .esh-action--light {
+  background: #dadbe2;
+  border-color: #dadbe2;
+  color: #08080b;
+}
+:root[data-theme="dark"] .esh-action--light:hover {
+  background: transparent;
+  color: #e8e8ed;
+}
+:root[data-theme="dark"] .esh-hero__image-caption {
+  background: rgba(9,9,13,.92);
+  color: #e9e9ee;
+  border: 1px solid rgba(210,210,224,.17);
+}
+:root[data-theme="dark"] .esh-hero__image-caption strong {
+  color: #f5f5f8;
+}
+:root[data-theme="dark"] .esh-hero__side-label {
+  color: #f8f8fb;
+  text-shadow: 0 1px 8px #000, 0 1px 2px #000;
+}
+:root[data-theme="dark"] .esh-category-card__photo,
+:root[data-theme="dark"] .esh-product-card__image-wrap {
+  background: #17171a;
+}
+:root[data-theme="dark"] .esh-product-card__flag,
+:root[data-theme="dark"] .esh-category-card__number {
+  background: #111114;
+  color: #e8e8ef;
+  border: 1px solid #45454c;
+}
+:root[data-theme="dark"] .esh-footer {
+  background: #0c0c10;
+  border-color: #2c2c34;
+}
+:root[data-theme="dark"] .esh-hero__title,
+:root[data-theme="dark"] .esh-section-title,
+:root[data-theme="dark"] .esh-shop-heading h1,
+:root[data-theme="dark"] .esh-story h2,
+:root[data-theme="dark"] .esh-final-note h2 {
+  background-image: linear-gradient(120deg, #ffffff 0%, #d2d2dc 40%, #92949f 70%, #f0f0f4 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+:root[data-theme="dark"] .esh-hero__description,
+:root[data-theme="dark"] .esh-kicker,
+:root[data-theme="dark"] .esh-eyebrow {
+  color: #b9b8c2;
+}
+
+/* Shared legacy Tailwind forms, customer screens and administration. */
+:root[data-theme="dark"] .bg-slate-50,
+:root[data-theme="dark"] .bg-gray-50,
+:root[data-theme="dark"] .bg-neutral-50 { background-color: #08080c !important; }
+:root[data-theme="dark"] .bg-slate-100,
+:root[data-theme="dark"] .bg-gray-100,
+:root[data-theme="dark"] .bg-neutral-100 { background-color: #1b1b21 !important; }
+:root[data-theme="dark"] .bg-white { background-color: #141418 !important; }
+:root[data-theme="dark"] .text-black,
+:root[data-theme="dark"] .text-slate-900,
+:root[data-theme="dark"] .text-slate-800,
+:root[data-theme="dark"] .text-slate-700,
+:root[data-theme="dark"] .text-gray-800,
+:root[data-theme="dark"] .text-gray-900,
+:root[data-theme="dark"] .text-neutral-900 { color: #e9e9ee !important; }
+:root[data-theme="dark"] .text-slate-600,
+:root[data-theme="dark"] .text-slate-500,
+:root[data-theme="dark"] .text-gray-600,
+:root[data-theme="dark"] .text-gray-500,
+:root[data-theme="dark"] .text-neutral-700,
+:root[data-theme="dark"] .text-neutral-600,
+:root[data-theme="dark"] .text-neutral-500 { color: #a7a8b5 !important; }
+:root[data-theme="dark"] .border-slate-100,
+:root[data-theme="dark"] .border-slate-200,
+:root[data-theme="dark"] .border-gray-100,
+:root[data-theme="dark"] .border-gray-200,
+:root[data-theme="dark"] .border-gray-300,
+:root[data-theme="dark"] .border-neutral-200,
+:root[data-theme="dark"] .border-neutral-300,
+:root[data-theme="dark"] .divide-gray-200 > * + *,
+:root[data-theme="dark"] .divide-slate-200 > * + * { border-color: #34343d !important; }
+:root[data-theme="dark"] .bg-slate-900 { background: #23232b !important; }
+:root[data-theme="dark"] .bg-black,
+:root[data-theme="dark"] .bg-gray-900,
+:root[data-theme="dark"] .bg-neutral-900 { background-color: #d7d7de !important; }
+:root[data-theme="dark"] .bg-black.text-white,
+:root[data-theme="dark"] .bg-gray-900.text-white,
+:root[data-theme="dark"] .bg-neutral-900.text-white { color: #09090d !important; }
+:root[data-theme="dark"] .bg-black .text-neutral-300,
+:root[data-theme="dark"] .bg-gray-900 .text-neutral-300,
+:root[data-theme="dark"] .bg-neutral-900 .text-neutral-300 { color: #494a56 !important; }
+:root[data-theme="dark"] input:not([type="checkbox"]):not([type="radio"]),
+:root[data-theme="dark"] textarea,
+:root[data-theme="dark"] select {
+  color: var(--ink);
+  border-color: var(--line);
+}
+:root[data-theme="dark"] input::placeholder,
+:root[data-theme="dark"] textarea::placeholder { color: #8f909d; opacity: 1; }
+:root[data-theme="dark"] select option { color: #eeedf2; background: #17171d; }
+:root[data-theme="dark"] .hover\:bg-gray-50:hover,
+:root[data-theme="dark"] .hover\:bg-slate-100:hover { background: #292931 !important; }
+:root[data-theme="dark"] .hover\:text-slate-900:hover,
+:root[data-theme="dark"] .hover\:text-black:hover { color: #fff !important; }
+:root[data-theme="dark"] .border-black { border-color: #bfc0ca !important; }
+
+/* Existing catalog management routes are already fully functional. */
+.esh-admin-quick-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 7px 9px;
+  min-height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  color: var(--ink);
+  text-decoration: none;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.esh-admin-quick-link:hover { background: var(--paper-deep); }
+.esh-admin-quick-link:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+@media (max-width: 430px) {
+  .esh-header-actions { gap: 0; }
+  .esh-header-actions .esh-header-icon { width: 38px; height: 40px; }
+  .esh-theme-toggle { min-width: 60px; }
+  .esh-theme-toggle__track { width: 58px; }
+  :root[data-theme="dark"] .esh-theme-toggle__thumb { transform: translateX(25px); }
+  .esh-brand { font-size: 2rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .esh-theme-toggle__track,
+  .esh-theme-toggle__thumb { transition: none; }
+}
