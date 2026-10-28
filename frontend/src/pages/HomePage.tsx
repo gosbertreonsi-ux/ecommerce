@@ -14,6 +14,18 @@ import {
   swapToPlaceholder,
 } from "../utils/format";
 
+/**
+ * OPTIONAL HERO VIDEO — OFF BY DEFAULT.
+ * Put the muted MP4 at frontend/public/videos/hero.mp4.
+ * Uncomment ONLY the line below to enable it.
+ * Video mode deliberately removes the product link from the hero.
+ * Comment it out again to restore the clickable product image.
+ */
+const HERO_VIDEO_SOURCES: string[] = [
+  "../../public/videos/hero.mp4",
+];
+const HERO_VIDEO_SRC = HERO_VIDEO_SOURCES[0];
+
 /** Editorial merchandising reads the EXISTING product API. No sample/fake products. */
 function HomePage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -89,7 +101,39 @@ function HomePage() {
         </div>
 
         <div className="esh-hero__visual">
-          {heroProduct ? (
+          {HERO_VIDEO_SRC ? (
+            // VIDEO MODE: this is a <div>, not a <Link>. No product navigation.
+            <div className="esh-hero__image-link">
+              {heroProduct && (
+                <img
+                  className="esh-hero__image"
+                  src={getPrimaryImageUrl(heroProduct.images)}
+                  alt=""
+                  onError={swapToPlaceholder}
+                  fetchPriority="high"
+                />
+              )}
+              <video
+                className="esh-hero__video"
+                autoPlay
+                muted
+                loop
+                playsInline
+                preload="metadata"
+                aria-label="E-Shop promotional film"
+                onError={(event) => {
+                  // Keep the product photograph as a visual fallback.
+                  event.currentTarget.style.display = "none";
+                }}
+              >
+                <source src={HERO_VIDEO_SRC} type="video/mp4" />
+              </video>
+              <div className="esh-hero__image-caption">
+                <span><small>THE E-SHOP EDIT</small><strong>Discover our collection</strong></span>
+              </div>
+            </div>
+          ) : heroProduct ? (
+            // IMAGE MODE: original product link stays fully functional.
             <Link to={"/products/" + heroProduct.id} className="esh-hero__image-link" aria-label={"Explore " + heroProduct.name}>
               <img
                 className="esh-hero__image"
@@ -98,26 +142,6 @@ function HomePage() {
                 onError={swapToPlaceholder}
                 fetchPriority="high"
               />
-              {/* OPTIONAL HERO VIDEO — OFF BY DEFAULT.
-                  1. Put your silent short MP4 at frontend/public/videos/hero.mp4.
-                  2. Remove ONLY the JSX comment markers around <video> below.
-                  3. Leave the <img> above in place as a cover / fallback.
-                  The video uses the very same cover area and object-fit: cover.
-              */}
-              {
-              <video
-                className="esh-hero__video"
-                autoPlay
-                muted
-                loop
-                playsInline
-                preload="metadata"
-                aria-hidden="true"
-                onError={(event) => { event.currentTarget.style.display = "none"; }}
-              >
-                <source src="../../public/videos/hero.mp4" type="video/mp4" />
-              </video>
-          }
               <div className="esh-hero__image-caption">
                 <span><small>IN THE SPOTLIGHT</small><strong>{heroProduct.name}</strong></span>
                 <span>{formatTZS(heroProduct.price)} <ArrowUpRight size={17} aria-hidden="true" /></span>
