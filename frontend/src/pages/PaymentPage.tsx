@@ -198,8 +198,15 @@ function PaymentPage() {
   const { payment } = order;
 
   const orderPath = `/orders/${order.id}`;
-  const methodName = paymentMethodLabel(payment.method);
-  const MethodIcon = METHOD_ICON[payment.method] ?? Wallet;
+const methodName = paymentMethodLabel(payment.method);
+
+const MethodIcon = payment.method
+  ? METHOD_ICON[payment.method] ?? Wallet
+  : Wallet;
+
+const methodNote = payment.method
+  ? METHOD_NOTE[payment.method]
+  : undefined;
   const status = STATUS_CONTENT[payment.status as PaymentStatus];
   const StatusIcon = status?.icon;
 
@@ -274,9 +281,8 @@ function PaymentPage() {
 
                 {isPending && (
                   <div className="mt-8">
-                    {METHOD_NOTE[payment.method] && (
-                      <p className="mb-6 border-l-2 border-black py-1 pl-4 text-sm text-neutral-600">
-                        {METHOD_NOTE[payment.method]}
+                    {methodNote && (
+                      <p className="mb-6 border-l-2 border-black py-1 pl-4 text-sm text-neutral-600">{methodNote}
                       </p>
                     )}
 
@@ -335,7 +341,7 @@ function PaymentPage() {
 
                 <div className="flex justify-between gap-4 border-t pt-4 text-base">
                   <dt>Total</dt>
-                  <dd className="text-xl">{formatTZS(payment.amount)}</dd>
+                  <dd className="text-xl">{formatTZS(payment.amount ?? order.total)}</dd>
                 </div>
               </dl>
 
