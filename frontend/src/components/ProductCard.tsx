@@ -1,7 +1,12 @@
 import { Link } from "react-router-dom";
 import { ArrowUpRight } from "lucide-react";
 import type { Product } from "../types/product";
-import { formatTZS, getPrimaryImageUrl, swapToPlaceholder } from "../utils/format";
+import {
+  formatTZS,
+  getPrimaryImageUrl,
+  getProductImageUrl,
+  swapToPlaceholder,
+} from "../utils/format";
 
 interface ProductCardProps {
   product: Product;
@@ -12,16 +17,41 @@ function ProductCard({ product }: ProductCardProps) {
   const stock = product.variants.reduce((total, variant) => total + Number(variant.stock), 0);
   const inStock = stock > 0;
 
+  // The API already supplies displayOrder and isPrimary. Always honour the
+  // explicitly chosen primary image, or fall back to the first uploaded image.
+  const orderedImages = [...product.images].sort(
+    (a, b) => a.displayOrder - b.displayOrder || a.id - b.id,
+  );
+  const coverImage = orderedImages.find((image) => image.isPrimary) ?? orderedImages[0];
+  const hoverImage = orderedImages.find((image) => image.id !== coverImage?.id);
+
   return (
     <article className="esh-product-card">
       <Link to={href} tabIndex={-1} aria-hidden="true" className="esh-product-card__image-link">
         <div className="esh-product-card__image-wrap">
           <img
-            src={getPrimaryImageUrl(product.images)}
+            className="esh-product-card__cover-image"
+            src={getPrimaryImageUrl(orderedImages)}
             alt=""
             loading="lazy"
             onError={swapToPlaceholder}
           />
+
+          {/* Secondary image is only rendered when at least two images exist.
+              Fading this layer in never affects the product/cart logic. */}
+          {hoverImage && (
+            <img
+              className="esh-product-card__hover-image"
+              src={getProductImageUrl(hoverImage.imageUrl)}
+              alt=""
+              loading="lazy"
+              onError={(event) => {
+                // Avoid showing a broken photo or a placeholder over a valid cover.
+                event.currentTarget.style.display = "none";
+              }}
+            />
+          )}
+
           {product.isFeatured && <span className="esh-product-card__flag">FEATURED</span>}
         </div>
       </Link>
