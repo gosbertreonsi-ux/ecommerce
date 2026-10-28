@@ -1,0 +1,41 @@
+/* E-Shop: secondary product image fades over the existing cover (400 ms).
+   This stylesheet is intentionally narrow and keeps the existing theme. */
+
+.esh-product-card__image-wrap > .esh-product-card__cover-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.esh-product-card__image-wrap > .esh-product-card__hover-image {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 400ms ease-in-out, transform 700ms ease;
+}
+
+/* Mouse / trackpad hover; also show for keyboard focus on hover-capable devices. */
+@media (hover: hover) and (pointer: fine) {
+  .esh-product-card:hover .esh-product-card__hover-image,
+  .esh-product-card:focus-within .esh-product-card__hover-image {
+    opacity: 1;
+  }
+}
+
+/* Keep the featured label visible above both photos. */
+.esh-product-card__image-wrap > .esh-product-card__flag {
+  z-index: 1;
+}
+
+/* Respect users who request reduced animation. */
+@media (prefers-reduced-motion: reduce) {
+  .esh-product-card__image-wrap > .esh-product-card__hover-image {
+    transition: none;
+  }
+}
