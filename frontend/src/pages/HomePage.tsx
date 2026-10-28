@@ -98,6 +98,26 @@ function HomePage() {
                 onError={swapToPlaceholder}
                 fetchPriority="high"
               />
+              {/* OPTIONAL HERO VIDEO — OFF BY DEFAULT.
+                  1. Put your silent short MP4 at frontend/public/videos/hero.mp4.
+                  2. Remove ONLY the JSX comment markers around <video> below.
+                  3. Leave the <img> above in place as a cover / fallback.
+                  The video uses the very same cover area and object-fit: cover.
+              */}
+              {
+              <video
+                className="esh-hero__video"
+                autoPlay
+                muted
+                loop
+                playsInline
+                preload="metadata"
+                aria-hidden="true"
+                onError={(event) => { event.currentTarget.style.display = "none"; }}
+              >
+                <source src="../../public/videos/hero.mp4" type="video/mp4" />
+              </video>
+          }
               <div className="esh-hero__image-caption">
                 <span><small>IN THE SPOTLIGHT</small><strong>{heroProduct.name}</strong></span>
                 <span>{formatTZS(heroProduct.price)} <ArrowUpRight size={17} aria-hidden="true" /></span>

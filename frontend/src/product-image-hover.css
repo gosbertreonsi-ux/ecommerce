@@ -17,7 +17,7 @@
   object-fit: cover;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 400ms ease-in-out, transform 700ms ease;
+  transition: opacity 1000ms ease-in-out, transform 1200ms ease;
 }
 
 /* Mouse / trackpad hover; also show for keyboard focus on hover-capable devices. */

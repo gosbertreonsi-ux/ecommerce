@@ -1,0 +1,124 @@
+/* E-Shop: optional hero video. Does not affect image uploads or the API. */
+.esh-hero__image-link > .esh-hero__video {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  pointer-events: none;
+}
+.esh-hero__image-link > .esh-hero__image-caption { z-index: 2; }
+
+/* Gallery: keep primary cover, then fade secondary image over it. */
+.esh-product-card__image-wrap { position: relative; isolation: isolate; }
+.esh-product-card__image-wrap > .esh-product-card__image-link {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+.esh-product-card__image-wrap .esh-product-card__cover-image,
+.esh-product-card__image-wrap .esh-product-card__hover-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.esh-product-card__image-wrap .esh-product-card__hover-image {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 400ms ease-in-out, transform 700ms ease;
+  will-change: opacity;
+  pointer-events: none;
+}
+.esh-product-card__image-wrap .esh-product-card__hover-image.is-visible {
+  opacity: 1;
+}
+.esh-product-card__image-wrap .esh-product-card__flag { z-index: 2; }
+
+/* Arrows become visible when the image is hovered or keyboard-focused. */
+.esh-product-card__carousel-controls {
+  position: absolute;
+  z-index: 5;
+  inset-inline: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: .5rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 250ms ease;
+}
+.esh-product-card__image-wrap:hover .esh-product-card__carousel-controls,
+.esh-product-card__image-wrap:focus-within .esh-product-card__carousel-controls {
+  opacity: 1;
+  pointer-events: auto;
+}
+.esh-product-card__carousel-arrow {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  color: var(--ink);
+  background: rgba(253, 251, 248, .94);
+  border: 1px solid var(--line);
+  transition: background-color 200ms ease, color 200ms ease;
+}
+.esh-product-card__carousel-arrow:hover,
+.esh-product-card__carousel-arrow:focus-visible {
+  color: var(--on-ink);
+  background: var(--ink);
+}
+.esh-product-card__carousel-count {
+  color: var(--ink);
+  background: rgba(253, 251, 248, .88);
+  padding: .2rem .5rem;
+  font-size: .7rem;
+  letter-spacing: .04em;
+}
+
+/* Product details: thumbnails inherit the same neutral store palette. */
+.esh-detail-thumbnails {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .65rem;
+  margin-top: .8rem;
+}
+.esh-detail-thumbnail {
+  position: relative;
+  width: clamp(65px, 8vw, 86px);
+  aspect-ratio: 1;
+  overflow: hidden;
+  background: var(--paper-deep);
+  border: 1px solid var(--line);
+  cursor: pointer;
+}
+.esh-detail-thumbnail[aria-pressed="true"] {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+.esh-detail-thumbnail img { width: 100%; height: 100%; object-fit: cover; }
+
+@media (hover: none) {
+  .esh-product-card__carousel-controls { opacity: 1; pointer-events: auto; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .esh-product-card__image-wrap .esh-product-card__hover-image,
+  .esh-product-card__carousel-controls { transition: none; }
+}
+.esh-detail-main-image { animation: esh-detail-image-show 320ms ease-out; }
+@keyframes esh-detail-image-show {
+  from { opacity: .35; }
+  to { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .esh-detail-main-image { animation: none; }
+}
+/* Keep the vertical editorial label above optional video footage. */
+.esh-hero__side-label { z-index: 3; }
