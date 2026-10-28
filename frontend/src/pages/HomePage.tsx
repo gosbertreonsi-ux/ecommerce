@@ -5,6 +5,7 @@ import { ArrowRight, ArrowUpRight } from "lucide-react";
 import Container from "../components/Container";
 import Loader from "../components/Loader";
 import ProductCard from "../components/ProductCard";
+import FloatingAnimeAdvert from "../components/FloatingAnimeAdvert";
 import { getProducts } from "../api/products.api";
 import type { Product } from "../types/product";
 import {
@@ -159,6 +160,8 @@ function HomePage() {
 
       {categories.length > 0 && (
         <section className="esh-section esh-categories" aria-labelledby="categories-heading">
+          {/* Decorative anime advertisement: arrives here and stays pinned while scrolling down. */}
+          <FloatingAnimeAdvert />
           <Container>
             <div className="esh-section-heading">
               <div>
