@@ -73,7 +73,7 @@ function RegisterPage() {
                   required
                   autoComplete="given-name"
                   className="vero-input"
-                  placeholder="John"
+                  placeholder="Leonce"
                 />
               </div>
 
@@ -90,7 +90,7 @@ function RegisterPage() {
                   required
                   autoComplete="family-name"
                   className="vero-input"
-                  placeholder="Doe"
+                  placeholder="Amani"
                 />
               </div>
 
@@ -107,7 +107,7 @@ function RegisterPage() {
                   required
                   autoComplete="email"
                   className="vero-input"
-                  placeholder="you@example.com"
+                  placeholder="leonceamani@example.com"
                 />
               </div>
 
