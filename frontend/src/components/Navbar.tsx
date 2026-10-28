@@ -4,6 +4,7 @@ import { Link, NavLink, useNavigate } from "react-router-dom";
 import { LogOut, Menu, Package, Search, ShoppingBag, UserRound, X } from "lucide-react";
 
 import Container from "./Container";
+import ThemeToggle from "./ThemeToggle";
 import { useAuth } from "../context/AuthContext";
 
 const desktopNavClass = ({ isActive }: { isActive: boolean }) =>
@@ -54,6 +55,8 @@ function Navbar() {
           </div>
 
           <div className="esh-header-actions">
+            {/* THEME SWITCH — beside the icons you marked in the screenshot. */}
+            <ThemeToggle />
             <button
               type="button"
               className="esh-header-icon"
