@@ -248,3 +248,30 @@
   .esh-theme-toggle__track,
   .esh-theme-toggle__thumb { transition: none; }
 }
+
+
+/* Product gallery controls — dark mode */
+
+:root[data-theme="dark"]
+.esh-product-card__carousel-count {
+  color: #ffffff;
+  background: rgba(8, 8, 12, 0.88);
+  border: 1px solid #555560;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+:root[data-theme="dark"]
+.esh-product-card__carousel-arrow {
+  color: #ffffff;
+  background: rgba(8, 8, 12, 0.88);
+  border: 1px solid #555560;
+}
+
+:root[data-theme="dark"]
+.esh-product-card__carousel-arrow:hover {
+  color: #08080b;
+  background: #ffffff;
+}
