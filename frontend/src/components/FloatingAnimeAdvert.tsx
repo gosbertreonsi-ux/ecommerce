@@ -1,54 +1,66 @@
 import { useEffect, useRef, useState } from "react";
 import "../floating-anime-ad.css";
 
+type AdvertPhase = "waiting" | "first" | "second";
+
 /**
- * Scroll-activated decorative advertisement for the home page.
- * The marker is positioned inside the "Find your favourites" section.
- * Once the visitor passes it, the artwork hangs at a fixed screen angle
- * until they scroll back up or reach the footer.
+ * Homepage-only, scroll-controlled decorations:
+ * 1. The original falling anime enters over "Find your favourites".
+ * 2. When the footer begins to appear, it flies BACK UP.
+ * 3. The exact transparent girl-and-products art then rises from below
+ *    and settles on the RIGHT, at the final section / footer boundary.
  *
- * No store/API calls, no clickable overlay, and no animation library.
+ * Both artworks have pointer-events: none (shopping remains clickable).
+ * Neither image requires a backend change or any product upload.
  */
 function FloatingAnimeAdvert() {
   const markerRef = useRef<HTMLSpanElement | null>(null);
-  const [isPinned, setIsPinned] = useState(false);
+  const [phase, setPhase] = useState<AdvertPhase>("waiting");
 
   useEffect(() => {
-    let animationFrame = 0;
+    let frame = 0;
 
-    const updatePosition = () => {
-      animationFrame = 0;
+    const measure = () => {
+      frame = 0;
       const marker = markerRef.current;
       if (!marker) return;
 
-      // Begin the entrance when the section reaches the lower-middle viewport.
-      const reachedSection =
-        marker.getBoundingClientRect().top <= window.innerHeight * 0.66;
+      const viewportHeight = window.innerHeight;
+      const enteredCollection =
+        marker.getBoundingClientRect().top <= viewportHeight * 0.66;
 
-      // Keep the last part of the page (footer) unobstructed.
-      const footer = document.querySelector("footer");
-      const reachedFooter = footer
-        ? footer.getBoundingClientRect().top <= window.innerHeight * 0.88
-        : false;
+      // The lower edge of the final black section marks the precise seam
+      // between "Make room for more" and the footer (the pink-marked area).
+      const finalSection = document.querySelector<HTMLElement>(".esh-final-note");
+      const footer = document.querySelector<HTMLElement>(".esh-footer");
+      const footerSeam = finalSection?.getBoundingClientRect().bottom
+        ?? footer?.getBoundingClientRect().top;
 
-      const shouldPin = reachedSection && !reachedFooter;
-      setIsPinned((previous) => previous === shouldPin ? previous : shouldPin);
+      // Trigger when the footer is just visible, not on the collection cards.
+      const enteredFooter =
+        footerSeam !== undefined && footerSeam <= viewportHeight * 0.88;
+
+      const nextPhase: AdvertPhase = enteredFooter
+        ? "second"
+        : enteredCollection
+          ? "first"
+          : "waiting";
+
+      setPhase((current) => current === nextPhase ? current : nextPhase);
     };
 
-    const requestUpdate = () => {
-      if (animationFrame === 0) {
-        animationFrame = window.requestAnimationFrame(updatePosition);
-      }
+    const scheduleMeasure = () => {
+      if (!frame) frame = window.requestAnimationFrame(measure);
     };
 
-    updatePosition();
-    window.addEventListener("scroll", requestUpdate, { passive: true });
-    window.addEventListener("resize", requestUpdate);
+    measure();
+    window.addEventListener("scroll", scheduleMeasure, { passive: true });
+    window.addEventListener("resize", scheduleMeasure);
 
     return () => {
-      window.removeEventListener("scroll", requestUpdate);
-      window.removeEventListener("resize", requestUpdate);
-      if (animationFrame) window.cancelAnimationFrame(animationFrame);
+      window.removeEventListener("scroll", scheduleMeasure);
+      window.removeEventListener("resize", scheduleMeasure);
+      if (frame) window.cancelAnimationFrame(frame);
     };
   }, []);
 
@@ -56,14 +68,37 @@ function FloatingAnimeAdvert() {
     <>
       <span ref={markerRef} className="esh-floating-anime__marker" aria-hidden="true" />
 
+      {/* FIRST ANIME: swings into the collection, then exits UP at its limit. */}
       <div
-        className={`esh-floating-anime${isPinned ? " esh-floating-anime--pinned" : ""}`}
+        className={[
+          "esh-floating-anime",
+          phase === "first" ? "esh-floating-anime--pinned" : "",
+          phase === "second" ? "esh-floating-anime--exiting" : "",
+        ].filter(Boolean).join(" ")}
         aria-hidden="true"
       >
         <div className="esh-floating-anime__swing">
           <img
             className="esh-floating-anime__art"
             src="/images/falling-shopping-anime.png"
+            alt=""
+            draggable={false}
+            decoding="async"
+          />
+        </div>
+      </div>
+
+      {/* SECOND ANIME: same exact uploaded girl with her shopping products.
+          The uploaded PNG is already transparent (RGBA).
+          Rises from below over the RIGHT footer area and bobs happily. */}
+      <div
+        className={`esh-receiving-anime${phase === "second" ? " esh-receiving-anime--visible" : ""}`}
+        aria-hidden="true"
+      >
+        <div className="esh-receiving-anime__happy">
+          <img
+            className="esh-receiving-anime__art"
+            src="/images/receiving-shopping-anime.png"
             alt=""
             draggable={false}
             decoding="async"
