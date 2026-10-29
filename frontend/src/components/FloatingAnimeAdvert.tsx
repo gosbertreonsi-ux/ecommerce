@@ -17,7 +17,7 @@ const WONDERING_DISMISS_SCROLL_PX = 28;
  */
 const SOCIAL_LINKS = {
   github: "https://github.com/gosbertreonsi-ux",
-  whatsapp: "https://wa.me/?text=Hello%20E-Shop",
+  whatsapp: "https://wa.me/255740462193?text=Hell%20E%20shop",
 } as const;
 
 function FloatingAnimeAdvert() {
