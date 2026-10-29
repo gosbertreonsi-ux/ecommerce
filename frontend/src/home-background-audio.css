@@ -1,0 +1,56 @@
+/* Tiny transparent sound control in the upper-right utility bar.
+   The icon inherits the existing light/dark header colors. */
+.esh-home-audio {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  margin-left: .3rem;
+}
+
+.esh-home-audio__toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 33px;
+  height: 33px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  opacity: .78;
+  cursor: pointer;
+  transition: opacity 220ms ease, border-color 220ms ease;
+}
+
+.esh-home-audio__toggle:hover,
+.esh-home-audio__toggle:focus-visible {
+  opacity: 1;
+  border-color: currentColor;
+}
+
+.esh-home-audio__toggle:disabled {
+  opacity: .3;
+  cursor: not-allowed;
+}
+
+/* The existing storefront hides utility-bar links on small screens.
+   Keep the audio button available without covering the headline. */
+@media (max-width: 760px) {
+  .esh-utility-bar__inner--audio {
+    justify-content: space-between;
+    gap: .5rem;
+  }
+
+  .esh-utility-bar__inner--audio > span:first-child {
+    min-width: 0;
+    text-align: left;
+  }
+
+  .esh-home-audio { margin-left: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .esh-home-audio__toggle { transition: none; }
+}
