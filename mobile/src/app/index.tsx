@@ -28,7 +28,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const { theme, colors, toggleTheme } = useShopTheme();
   const listRef = useRef<FlatList<Product>>(null);
-  const searchRef = useRef<TextInput>(null);
+  const searchRef = useRef<React.ComponentRef<typeof TextInput>>(null);
   const productsOffset = useRef(0);
 
   const [products, setProducts] = useState<Product[]>([]);
@@ -191,7 +191,7 @@ export default function HomeScreen() {
                   resizeMode="cover"
                 />
               ) : null}
-              <View style={[StyleSheet.absoluteFillObject, { backgroundColor: heroProduct ? darkImageOverlay : "transparent" }]} />
+              <View style={[StyleSheet.absoluteFill, { backgroundColor: heroProduct ? darkImageOverlay : "transparent" }]} />
               <View style={styles.bannerCopy}>
                 <Text style={[styles.bannerKicker, { color: heroProduct ? bannerInk : colors.muted }]}>THE E-SHOP EDIT</Text>
                 <Text style={[styles.bannerTitle, { color: heroProduct ? bannerInk : colors.text }]}>
@@ -331,7 +331,7 @@ const styles = StyleSheet.create({
   searchBar: { height: 48, borderRadius: 27, borderWidth: 1, paddingHorizontal: 16, flexDirection: "row", gap: 10, alignItems: "center", marginBottom: 24 },
   searchInput: { fontSize: 13, flex: 1, minWidth: 0, height: "100%", paddingVertical: 0 },
   banner: { height: 214, borderRadius: 20, overflow: "hidden", position: "relative", justifyContent: "center", marginBottom: 31 },
-  bannerImage: { ...StyleSheet.absoluteFillObject, width: "100%", height: "100%" },
+  bannerImage: { ...StyleSheet.absoluteFill, width: "100%", height: "100%" },
   bannerCopy: { paddingHorizontal: 20, paddingVertical: 18, zIndex: 1 },
   bannerKicker: { fontSize: 9, letterSpacing: 1.5, fontWeight: "700", marginBottom: 13 },
   bannerTitle: { fontSize: 34, lineHeight: 35, fontWeight: "900", letterSpacing: -1.2 },
