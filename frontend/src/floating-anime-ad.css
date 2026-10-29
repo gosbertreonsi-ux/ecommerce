@@ -146,3 +146,59 @@
   .esh-floating-anime--pinned .esh-floating-anime__swing,
   .esh-footer-anime--receiving.is-visible .esh-footer-anime__art { animation: none !important; }
 }
+
+
+/* Two clickable social icons, at the marked hand positions.
+   Positioned over the girl without modifying the existing image. */
+.esh-wondering-socials {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+.esh-wondering-social {
+  position: absolute;
+  width: clamp(32px, 3vw, 40px);
+  height: clamp(32px, 3vw, 40px);
+  display: grid;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--ink) 30%, transparent);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--card) 55%, transparent);
+  color: var(--ink);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  transform: translate(-50%, -50%);
+  text-decoration: none;
+  pointer-events: auto;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(0,0,0,.06);
+  transition: background-color 200ms ease, border-color 200ms ease,
+    box-shadow 200ms ease, color 200ms ease;
+}
+
+/* Adjust these percentages if you change the girl artwork later. */
+.esh-wondering-social--left  { left: 16%; top: 12%; }
+.esh-wondering-social--right { left: 76%; top: 12%; }
+
+.esh-wondering-social__x { font-size: 20px; line-height: 1; }
+
+.esh-wondering-social:hover,
+.esh-wondering-social:focus-visible {
+  background: var(--card);
+  border-color: var(--ink);
+  box-shadow: 0 5px 17px rgba(0,0,0,.15);
+}
+.esh-wondering-social:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+
+@media (max-width: 540px) {
+  .esh-wondering-social { width: 30px; height: 30px; }
+  .esh-wondering-social__x { font-size: 17px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .esh-wondering-social { transition: none !important; }
+}
