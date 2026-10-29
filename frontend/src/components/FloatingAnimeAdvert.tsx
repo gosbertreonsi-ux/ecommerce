@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Github } from "lucide-react";
 import "../floating-anime-ad.css";
 
 type FooterStage = "hidden" | "receiving" | "wondering" | "finished";
@@ -9,6 +10,16 @@ const FOOTER_READ_DELAY_MS = 2200;
 const RECEIVING_VISIBLE_MS = 2600;
 // A deliberate further downward scroll dismisses the wondering girl.
 const WONDERING_DISMISS_SCROLL_PX = 28;
+
+/**
+ * YOUR SOCIAL LINKS — edit these two addresses whenever you like.
+ * GitHub points to your known public profile. X currently opens x.com;
+ * replace it with your own profile URL (e.g. https://x.com/yourhandle).
+ */
+const SOCIAL_LINKS = {
+  github: "https://github.com/gosbertreonsi-ux",
+  x: "https://x.com/",
+} as const;
 
 function FloatingAnimeAdvert() {
   const markerRef = useRef<HTMLSpanElement>(null);
@@ -165,8 +176,9 @@ function FloatingAnimeAdvert() {
       <div
         ref={wonderingRef}
         className={`esh-footer-anime esh-footer-anime--wondering${stage === "wondering" ? " is-visible" : ""}`}
-        aria-hidden="true"
+        aria-hidden={stage !== "wondering"}
       >
+        {/* Original artwork stays exactly as it was. */}
         <img
           className="esh-footer-anime__art"
           src="/images/wondering-girl.png"
@@ -174,6 +186,33 @@ function FloatingAnimeAdvert() {
           draggable={false}
           decoding="async"
         />
+
+        {/* Small circular links float near her two raised hands.
+            The rest of this overlay stays non-interactive. */}
+        <div className="esh-wondering-socials">
+          <a
+            className="esh-wondering-social esh-wondering-social--left"
+            href={SOCIAL_LINKS.github}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Visit my GitHub profile"
+            title="GitHub"
+            tabIndex={stage === "wondering" ? 0 : -1}
+          >
+            <Github size={17} strokeWidth={1.75} aria-hidden="true" />
+          </a>
+          <a
+            className="esh-wondering-social esh-wondering-social--right"
+            href={SOCIAL_LINKS.x}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Open X"
+            title="X (Twitter)"
+            tabIndex={stage === "wondering" ? 0 : -1}
+          >
+            <span className="esh-wondering-social__x" aria-hidden="true">𝕏</span>
+          </a>
+        </div>
       </div>
     </>
   );
