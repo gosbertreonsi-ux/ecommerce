@@ -17,6 +17,7 @@ import {
 import { ProductCard } from "../components/ProductCard";
 import { getOrderedImages, getProducts, productImageUrl } from "../lib/api";
 import { useShopTheme } from "../theme/ShopTheme";
+import { fonts } from "../theme/fonts";
 import type { Product } from "../types/product";
 
 /** The screenshot is the layout reference; the live E-Shop API is the data source. */
@@ -195,7 +196,7 @@ export default function HomeScreen() {
               <View style={styles.bannerCopy}>
                 <Text style={[styles.bannerKicker, { color: heroProduct ? bannerInk : colors.muted }]}>THE E-SHOP EDIT</Text>
                 <Text style={[styles.bannerTitle, { color: heroProduct ? bannerInk : colors.text }]}>
-                  Discover{`\n`}the art of{`\n`}everyday.
+                  Discover{`\n`}the <Text style={{ fontFamily: fonts.serifItalic }}>art</Text> of{`\n`}everyday.
                 </Text>
                 <Text style={[styles.bannerSub, { color: heroProduct ? bannerInk : colors.muted }]} numberOfLines={1}>
                   Good things, beautifully found.
@@ -254,9 +255,9 @@ export default function HomeScreen() {
             ) : null}
             {error && (
               <View style={[styles.errorBox, { borderColor: colors.border, backgroundColor: colors.surface }]}> 
-                <Text style={{ color: colors.text }}>{error}</Text>
+                <Text style={{ color: colors.text, fontFamily: fonts.sans }}>{error}</Text>
                 <Pressable onPress={() => void load()} accessibilityRole="button" style={{ marginTop: 9 }}>
-                  <Text style={{ color: colors.text, textDecorationLine: "underline" }}>Retry</Text>
+                  <Text style={{ color: colors.text, fontFamily: fonts.sans, textDecorationLine: "underline" }}>Retry</Text>
                 </Pressable>
               </View>
             )}
@@ -273,7 +274,7 @@ export default function HomeScreen() {
             {/* Retain the website's philosophy content beneath the mobile collection. */}
             <View style={[styles.philosophy, { backgroundColor: colors.surface, borderColor: colors.border }]}> 
               <Text style={[styles.eyebrow, { color: colors.muted }]}>OUR PHILOSOPHY</Text>
-              <Text style={[styles.philosophyTitle, { color: colors.text }]}>Beautiful things.{"\n"}Simple pleasures.</Text>
+              <Text style={[styles.philosophyTitle, { color: colors.text }]}>Beautiful things.{"\n"}<Text style={{ fontFamily: fonts.serifItalic }}>Simple pleasures.</Text></Text>
               <Text style={[styles.philosophyBody, { color: colors.muted }]}>Shopping should feel inspiring, never complicated. Find what speaks to you, explore the details, and make it yours.</Text>
               <Pressable accessibilityRole="button" onPress={goToProducts}>
                 <Text style={[styles.discoverText, { color: colors.text }]}>Discover the edit  →</Text>
@@ -322,48 +323,48 @@ const styles = StyleSheet.create({
   scrollContent: { paddingHorizontal: 20, paddingTop: 18, paddingBottom: 120 },
   columns: { gap: 13, marginBottom: 22 },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 19 },
-  eyebrow: { fontSize: 9, letterSpacing: 1.6, fontWeight: "700" },
-  heading: { fontSize: 32, letterSpacing: -1.15, fontWeight: "800", marginTop: 4 },
+  eyebrow: { fontSize: 9, letterSpacing: 1.6, fontFamily: fonts.sansSemiBold },
+  heading: { fontSize: 32, letterSpacing: -1.15, fontFamily: fonts.sansSemiBold, marginTop: 4 },
   actions: { flexDirection: "row", alignItems: "center", gap: 9 },
   themeAction: { width: 35, height: 35, borderRadius: 18, borderWidth: 1, alignItems: "center", justifyContent: "center" },
   avatar: { width: 35, height: 35, borderRadius: 18, borderWidth: 1, justifyContent: "center", alignItems: "center" },
   roundAction: { width: 35, height: 35, borderRadius: 18, borderWidth: 1, justifyContent: "center", alignItems: "center" },
   searchBar: { height: 48, borderRadius: 27, borderWidth: 1, paddingHorizontal: 16, flexDirection: "row", gap: 10, alignItems: "center", marginBottom: 24 },
-  searchInput: { fontSize: 13, flex: 1, minWidth: 0, height: "100%", paddingVertical: 0 },
+  searchInput: { fontSize: 13, fontFamily: fonts.sans, flex: 1, minWidth: 0, height: "100%", paddingVertical: 0 },
   banner: { height: 214, borderRadius: 20, overflow: "hidden", position: "relative", justifyContent: "center", marginBottom: 31 },
   bannerImage: { ...StyleSheet.absoluteFill, width: "100%", height: "100%" },
   bannerCopy: { paddingHorizontal: 20, paddingVertical: 18, zIndex: 1 },
-  bannerKicker: { fontSize: 9, letterSpacing: 1.5, fontWeight: "700", marginBottom: 13 },
-  bannerTitle: { fontSize: 34, lineHeight: 35, fontWeight: "900", letterSpacing: -1.2 },
-  bannerSub: { fontSize: 10, marginTop: 12, opacity: .9 },
+  bannerKicker: { fontSize: 9, letterSpacing: 1.5, fontFamily: fonts.sansSemiBold, marginBottom: 13 },
+  bannerTitle: { fontSize: 43, lineHeight: 40, fontFamily: fonts.serif, letterSpacing: -1.2 },
+  bannerSub: { fontSize: 10, fontFamily: fonts.sans, marginTop: 12, opacity: .9 },
   bannerArrow: { position: "absolute", bottom: 15, right: 15, height: 34, width: 34, borderRadius: 17, justifyContent: "center", alignItems: "center", zIndex: 2 },
   categoryHeading: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 17 },
-  sectionHeading: { fontSize: 21, fontWeight: "800", letterSpacing: -.65 },
-  seeAll: { fontSize: 11, fontWeight: "500" },
+  sectionHeading: { fontSize: 29, lineHeight: 33, fontFamily: fonts.serif, letterSpacing: -.65 },
+  seeAll: { fontSize: 11, fontFamily: fonts.sansMedium },
   categoryRail: { gap: 15, paddingBottom: 8, paddingRight: 20 },
   categoryItem: { width: 70, alignItems: "center", gap: 9 },
   categoryCircle: { width: 64, height: 64, borderRadius: 32, borderWidth: 1, justifyContent: "center", alignItems: "center", overflow: "hidden" },
   categoryImage: { width: "100%", height: "100%" },
-  categoryLabel: { fontSize: 10, fontWeight: "600", textAlign: "center", maxWidth: 70 },
+  categoryLabel: { fontSize: 10, fontFamily: fonts.sansMedium, textAlign: "center", maxWidth: 70 },
   productHeadingRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 29, marginBottom: 17 },
-  sectionSubheading: { fontSize: 11, marginTop: 4 },
+  sectionSubheading: { fontSize: 11, fontFamily: fonts.sans, marginTop: 4 },
   filterInfo: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 15 },
-  filterText: { fontSize: 11 },
-  clearFilters: { fontSize: 11, fontWeight: "600", textDecorationLine: "underline" },
+  filterText: { fontSize: 11, fontFamily: fonts.sans },
+  clearFilters: { fontSize: 11, fontFamily: fonts.sansSemiBold, textDecorationLine: "underline" },
   errorBox: { padding: 14, borderWidth: 1, borderRadius: 14, marginBottom: 12 },
   loading: { padding: 23 },
-  noProducts: { textAlign: "center", padding: 30 },
+  noProducts: { textAlign: "center", padding: 30, fontFamily: fonts.sans },
   footerBlocks: { paddingTop: 30, paddingBottom: 25 },
   philosophy: { borderWidth: 1, padding: 24, borderRadius: 20, gap: 16 },
-  philosophyTitle: { fontFamily: "Georgia", fontSize: 30, letterSpacing: -1, lineHeight: 34 },
-  philosophyBody: { fontSize: 12, lineHeight: 21 },
-  discoverText: { fontSize: 12, fontWeight: "700" },
-  footerBrand: { fontFamily: "Georgia", fontSize: 29, fontWeight: "600", marginTop: 37 },
-  footerCaption: { fontSize: 9, letterSpacing: 1.4, marginTop: 6 },
+  philosophyTitle: { fontFamily: fonts.serif, fontSize: 35, letterSpacing: -1, lineHeight: 37 },
+  philosophyBody: { fontSize: 12, fontFamily: fonts.sans, lineHeight: 21 },
+  discoverText: { fontSize: 12, fontFamily: fonts.sansSemiBold },
+  footerBrand: { fontFamily: fonts.serifSemiBold, fontSize: 32, marginTop: 37 },
+  footerCaption: { fontSize: 9, fontFamily: fonts.sans, letterSpacing: 1.4, marginTop: 6 },
   tabBar: { height: 66, position: "absolute", bottom: 16, left: 20, right: 20, borderRadius: 34, borderWidth: 1, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 9, zIndex: 10, elevation: 10, shadowColor: "#000", shadowOpacity: .18, shadowRadius: 16, shadowOffset: { width: 0, height: 6 } },
   tabSelected: { flexDirection: "row", gap: 8, height: 46, borderRadius: 25, paddingHorizontal: 17, alignItems: "center", justifyContent: "center" },
-  activeTabLabel: { fontSize: 12, fontWeight: "700" },
+  activeTabLabel: { fontSize: 12, fontFamily: fonts.sansSemiBold },
   tabIcon: { width: 49, height: 48, justifyContent: "center", alignItems: "center" },
   notice: { position: "absolute", bottom: 92, left: 24, right: 24, borderRadius: 14, borderWidth: 1, padding: 15, flexDirection: "row", alignItems: "center", gap: 10, zIndex: 11 },
-  noticeText: { flex: 1, fontSize: 12, lineHeight: 19 },
+  noticeText: { flex: 1, fontSize: 12, fontFamily: fonts.sans, lineHeight: 19 },
 });
