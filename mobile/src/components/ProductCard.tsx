@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import type { Product } from "../types/product";
@@ -6,70 +7,72 @@ import { getOrderedImages, productImageUrl } from "../lib/api";
 import { formatTZS } from "../lib/format";
 import { useShopTheme } from "../theme/ShopTheme";
 
-/** Matches the website's unboxed editorial cards and mid-photo image controls. */
+/** Screenshot-shaped rounded cards, but ALL information comes from the real API. */
 export function ProductCard({ product }: { product: Product }) {
   const router = useRouter();
   const { colors, theme } = useShopTheme();
-  const [activeIndex, setActiveIndex] = useState(0);
+  const [imageIndex, setImageIndex] = useState(0);
   const images = getOrderedImages(product.images);
-  const safeIndex = activeIndex < images.length ? activeIndex : 0;
-  const stock = product.variants.reduce((sum, option) => sum + Number(option.stock), 0);
+  const active = images.length ? imageIndex % images.length : 0;
+  const stock = product.variants.reduce((sum, variant) => sum + Number(variant.stock), 0);
+
   const open = () => router.push({ pathname: "/product/[id]", params: { id: String(product.id) } });
-  const move = (direction: 1 | -1) => setActiveIndex((i) => (i + direction + images.length) % images.length);
+  const changeImage = (direction: -1 | 1) => {
+    if (images.length > 1) setImageIndex((current) => (current + direction + images.length) % images.length);
+  };
 
   return (
     <View style={styles.card}>
-      <View style={[styles.imageWrap, { backgroundColor: colors.surface }]}>
-        <Pressable onPress={open} style={styles.imageLink} accessibilityRole="button" accessibilityLabel={`Explore ${product.name}`}>
-          {images[safeIndex] ? (
-            <Image source={{ uri: productImageUrl(images[safeIndex].imageUrl) }} style={styles.image} resizeMode="cover" />
+      <View style={[styles.media, { backgroundColor: colors.surface }]}> 
+        <Pressable accessibilityRole="button" accessibilityLabel={`View ${product.name}`} onPress={open} style={styles.photoButton}>
+          {images[active] ? (
+            <Image source={{ uri: productImageUrl(images[active].imageUrl) }} resizeMode="cover" style={styles.productImage} />
           ) : (
-            <Text style={{ color: colors.muted }}>No image</Text>
+            <Ionicons name="image-outline" color={colors.muted} size={38} />
           )}
-          {product.isFeatured && (
-            <View style={[styles.flag, { backgroundColor: colors.background, borderColor: colors.border }]}>
-              <Text style={[styles.flagText, { color: colors.text }]}>FEATURED</Text>
+          {product.isFeatured ? (
+            <View style={[styles.featured, { backgroundColor: colors.card }]}> 
+              <Text style={[styles.featuredText, { color: colors.text }]}>FEATURED</Text>
             </View>
-          )}
+          ) : null}
         </Pressable>
-        {images.length > 1 && (
-          <View style={styles.controls} pointerEvents="box-none">
-            <Pressable onPress={() => move(-1)} accessibilityRole="button" accessibilityLabel={`Previous image of ${product.name}`} style={[styles.arrowButton, { backgroundColor: theme === "dark" ? "rgba(8,8,12,.88)" : "rgba(253,251,248,.94)", borderColor: colors.border }]}>
-              <Text style={[styles.arrowText, { color: colors.text }]}>‹</Text>
+        {images.length > 1 ? (
+          <View style={styles.galleryControls} pointerEvents="box-none">
+            <Pressable accessibilityRole="button" accessibilityLabel={`Previous image of ${product.name}`} onPress={() => changeImage(-1)} style={[styles.galleryArrow, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <Ionicons name="chevron-back" size={13} color={colors.text} />
             </Pressable>
-            <View style={[styles.counter, { backgroundColor: theme === "dark" ? "rgba(8,8,12,.88)" : "rgba(253,251,248,.88)", borderColor: colors.border }]}>
-              <Text style={[styles.counterText, { color: colors.text }]}>{safeIndex + 1} / {images.length}</Text>
+            <View style={[styles.imageCount, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <Text style={{ color: colors.text, fontWeight: "700", fontSize: 10 }}>{active + 1}/{images.length}</Text>
             </View>
-            <Pressable onPress={() => move(1)} accessibilityRole="button" accessibilityLabel={`Next image of ${product.name}`} style={[styles.arrowButton, { backgroundColor: theme === "dark" ? "rgba(8,8,12,.88)" : "rgba(253,251,248,.94)", borderColor: colors.border }]}>
-              <Text style={[styles.arrowText, { color: colors.text }]}>›</Text>
+            <Pressable accessibilityRole="button" accessibilityLabel={`Next image of ${product.name}`} onPress={() => changeImage(1)} style={[styles.galleryArrow, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <Ionicons name="chevron-forward" size={13} color={colors.text} />
             </Pressable>
           </View>
-        )}
+        ) : null}
       </View>
-      <Text style={[styles.category, { color: colors.muted }]} numberOfLines={1}>{product.category.name}</Text>
-      <Pressable onPress={open} accessibilityRole="button" accessibilityLabel={`View ${product.name}`}>
+      <Pressable onPress={open} accessibilityRole="button" style={styles.productInfo}>
+        <Text style={[styles.category, { color: colors.muted }]} numberOfLines={1}>{product.category.name}</Text>
         <Text style={[styles.name, { color: colors.text }]} numberOfLines={2}>{product.name}</Text>
+        <Text style={[styles.price, { color: colors.text }]} numberOfLines={1}>{formatTZS(product.price)}</Text>
+        <Text style={[styles.stock, { color: colors.muted }]} numberOfLines={1}>{stock > 0 ? `${stock} available` : "Out of stock"}</Text>
       </Pressable>
-      <Text style={[styles.price, { color: colors.text }]}>{formatTZS(product.price)}</Text>
-      <Text style={[styles.stock, { color: colors.muted }]}>{stock > 0 ? `${stock} available` : "Out of stock"}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   card: { flex: 1, minWidth: 0 },
-  imageWrap: { aspectRatio: 4 / 5, overflow: "hidden", position: "relative" },
-  imageLink: { height: "100%", width: "100%", justifyContent: "center", alignItems: "center" },
-  image: { height: "100%", width: "100%" },
-  flag: { position: "absolute", top: 10, left: 10, paddingHorizontal: 7, paddingVertical: 5, borderWidth: 1 },
-  flagText: { fontSize: 8, letterSpacing: 1 },
-  controls: { position: "absolute", top: "45%", left: 5, right: 5, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  arrowButton: { width: 29, height: 34, borderWidth: 1, alignItems: "center", justifyContent: "center" },
-  arrowText: { fontSize: 27, lineHeight: 30 },
-  counter: { borderWidth: 1, paddingHorizontal: 6, paddingVertical: 6 },
-  counterText: { fontSize: 10, fontWeight: "600", letterSpacing: .3 },
-  category: { marginTop: 13, fontSize: 10 },
-  name: { fontFamily: "Georgia", fontSize: 21, lineHeight: 24, marginTop: 7 },
-  price: { fontSize: 13, marginTop: 12 },
-  stock: { fontSize: 10, marginTop: 5 },
+  media: { aspectRatio: 0.83, borderRadius: 18, position: "relative", overflow: "hidden", justifyContent: "center", alignItems: "center" },
+  photoButton: { width: "100%", height: "100%", alignItems: "center", justifyContent: "center" },
+  productImage: { width: "100%", height: "100%" },
+  featured: { position: "absolute", top: 10, left: 8, paddingVertical: 5, paddingHorizontal: 7, borderRadius: 8 },
+  featuredText: { fontSize: 8, fontWeight: "700", letterSpacing: .7 },
+  galleryControls: { position: "absolute", bottom: 8, left: 7, right: 7, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  galleryArrow: { height: 25, width: 25, borderRadius: 13, borderWidth: 1, alignItems: "center", justifyContent: "center" },
+  imageCount: { minHeight: 23, borderRadius: 12, borderWidth: 1, paddingHorizontal: 8, alignItems: "center", justifyContent: "center" },
+  productInfo: { paddingHorizontal: 1, paddingTop: 10 },
+  category: { fontSize: 10, marginBottom: 4 },
+  name: { fontSize: 12, fontWeight: "700", lineHeight: 17, minHeight: 33 },
+  price: { fontSize: 12, fontWeight: "800", marginTop: 7 },
+  stock: { fontSize: 10, marginTop: 3 },
 });
