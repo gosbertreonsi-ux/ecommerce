@@ -9,7 +9,7 @@ import { useShopTheme } from "../theme/ShopTheme";
 /** Matches the website's unboxed editorial cards and mid-photo image controls. */
 export function ProductCard({ product }: { product: Product }) {
   const router = useRouter();
-  const { colors } = useShopTheme();
+  const { colors, theme } = useShopTheme();
   const [activeIndex, setActiveIndex] = useState(0);
   const images = getOrderedImages(product.images);
   const safeIndex = activeIndex < images.length ? activeIndex : 0;
@@ -34,14 +34,14 @@ export function ProductCard({ product }: { product: Product }) {
         </Pressable>
         {images.length > 1 && (
           <View style={styles.controls} pointerEvents="box-none">
-            <Pressable onPress={() => move(-1)} accessibilityRole="button" accessibilityLabel={`Previous image of ${product.name}`} style={styles.arrowButton}>
-              <Text style={styles.arrowText}>‹</Text>
+            <Pressable onPress={() => move(-1)} accessibilityRole="button" accessibilityLabel={`Previous image of ${product.name}`} style={[styles.arrowButton, { backgroundColor: theme === "dark" ? "rgba(8,8,12,.88)" : "rgba(253,251,248,.94)", borderColor: colors.border }]}>
+              <Text style={[styles.arrowText, { color: colors.text }]}>‹</Text>
             </Pressable>
-            <View style={styles.counter}>
-              <Text style={styles.counterText}>{safeIndex + 1} / {images.length}</Text>
+            <View style={[styles.counter, { backgroundColor: theme === "dark" ? "rgba(8,8,12,.88)" : "rgba(253,251,248,.88)", borderColor: colors.border }]}>
+              <Text style={[styles.counterText, { color: colors.text }]}>{safeIndex + 1} / {images.length}</Text>
             </View>
-            <Pressable onPress={() => move(1)} accessibilityRole="button" accessibilityLabel={`Next image of ${product.name}`} style={styles.arrowButton}>
-              <Text style={styles.arrowText}>›</Text>
+            <Pressable onPress={() => move(1)} accessibilityRole="button" accessibilityLabel={`Next image of ${product.name}`} style={[styles.arrowButton, { backgroundColor: theme === "dark" ? "rgba(8,8,12,.88)" : "rgba(253,251,248,.94)", borderColor: colors.border }]}>
+              <Text style={[styles.arrowText, { color: colors.text }]}>›</Text>
             </Pressable>
           </View>
         )}
@@ -64,10 +64,10 @@ const styles = StyleSheet.create({
   flag: { position: "absolute", top: 10, left: 10, paddingHorizontal: 7, paddingVertical: 5, borderWidth: 1 },
   flagText: { fontSize: 8, letterSpacing: 1 },
   controls: { position: "absolute", top: "45%", left: 5, right: 5, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  arrowButton: { width: 29, height: 34, borderWidth: 1, borderColor: "#86858a", backgroundColor: "rgba(10,10,14,.88)", alignItems: "center", justifyContent: "center" },
-  arrowText: { color: "#ffffff", fontSize: 27, lineHeight: 30 },
-  counter: { backgroundColor: "rgba(10,10,14,.88)", borderColor: "#86858a", borderWidth: 1, paddingHorizontal: 6, paddingVertical: 6 },
-  counterText: { color: "#ffffff", fontSize: 10, fontWeight: "600", letterSpacing: .3 },
+  arrowButton: { width: 29, height: 34, borderWidth: 1, alignItems: "center", justifyContent: "center" },
+  arrowText: { fontSize: 27, lineHeight: 30 },
+  counter: { borderWidth: 1, paddingHorizontal: 6, paddingVertical: 6 },
+  counterText: { fontSize: 10, fontWeight: "600", letterSpacing: .3 },
   category: { marginTop: 13, fontSize: 10 },
   name: { fontFamily: "Georgia", fontSize: 21, lineHeight: 24, marginTop: 7 },
   price: { fontSize: 13, marginTop: 12 },
