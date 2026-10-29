@@ -1,10 +1,11 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { Link, NavLink, useNavigate } from "react-router-dom";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { LogOut, Menu, Package, Search, ShoppingBag, UserRound, X } from "lucide-react";
 
 import Container from "./Container";
 import ThemeToggle from "./ThemeToggle";
+import HomeBackgroundAudio from "./HomeBackgroundAudio";
 import { useAuth } from "../context/AuthContext";
 
 const desktopNavClass = ({ isActive }: { isActive: boolean }) =>
@@ -13,6 +14,8 @@ const desktopNavClass = ({ isActive }: { isActive: boolean }) =>
 function Navbar() {
   const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const onHomePage = location.pathname === "/";
   const [searchOpen, setSearchOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchText, setSearchText] = useState("");
@@ -33,13 +36,15 @@ function Navbar() {
   return (
     <header className="esh-site-header">
       <div className="esh-utility-bar">
-        <Container className="esh-utility-bar__inner">
+        <Container className={onHomePage ? "esh-utility-bar__inner esh-utility-bar__inner--audio" : "esh-utility-bar__inner"}>
           <span>Thoughtfully curated. Made for your everyday.</span>
           <div className="esh-utility-bar__links">
             {signedInUser ? <Link to="/orders" onClick={closeMenus}>Your orders</Link> : <Link to="/register" onClick={closeMenus}>Create an account</Link>}
             <span aria-hidden="true">•</span>
             <span>Prices in TZS</span>
           </div>
+          {/* Music is homepage-only. It disappears and pauses on other pages. */}
+          {onHomePage && <HomeBackgroundAudio />}
         </Container>
       </div>
 
