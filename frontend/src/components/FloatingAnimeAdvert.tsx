@@ -12,12 +12,12 @@ const WONDERING_DISMISS_SCROLL_PX = 28;
 
 /**
  * YOUR SOCIAL LINKS — edit these two addresses whenever you like.
- * GitHub points to your known public profile. X currently opens x.com;
- * replace it with your own profile URL (e.g. https://x.com/yourhandle).
+ * GitHub points to your public profile. WhatsApp uses a working message-sharing
+ * link until you add your own number, e.g. https://wa.me/2557XXXXXXXX.
  */
 const SOCIAL_LINKS = {
   github: "https://github.com/gosbertreonsi-ux",
-  x: "https://x.com/",
+  whatsapp: "https://wa.me/?text=Hello%20E-Shop",
 } as const;
 
 function FloatingAnimeAdvert() {
@@ -212,14 +212,24 @@ function FloatingAnimeAdvert() {
           </a>
           <a
             className="esh-wondering-social esh-wondering-social--right"
-            href={SOCIAL_LINKS.x}
+            href={SOCIAL_LINKS.whatsapp}
             target="_blank"
             rel="noopener noreferrer"
-            aria-label="Open X"
-            title="X (Twitter)"
+            aria-label="Open WhatsApp"
+            title="WhatsApp"
             tabIndex={stage === "wondering" ? 0 : -1}
           >
-            <span className="esh-wondering-social__x" aria-hidden="true">𝕏</span>
+            {/* WhatsApp mark, inline SVG: no icon dependency or image background. */}
+            <svg
+              width={18}
+              height={18}
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.966-.273-.099-.471-.148-.67.15-.197.297-.767.965-.94 1.164-.173.198-.347.223-.644.074-.297-.149-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.058-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.496.099-.198.05-.372-.025-.52-.074-.15-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.48 0 1.462 1.065 2.875 1.213 3.073.149.198 2.096 3.2 5.077 4.487.71.307 1.263.49 1.694.627.712.227 1.36.195 1.872.118.571-.085 1.758-.719 2.005-1.413.248-.694.248-1.29.173-1.413-.074-.124-.272-.198-.57-.347M12.004 0C5.38 0 .005 5.375.002 12a11.93 11.93 0 0 0 1.6 5.979L0 24l6.335-1.652A11.96 11.96 0 0 0 12.004 24C18.63 24 24 18.626 24 12S18.63 0 12.004 0zm0 21.8a9.77 9.77 0 0 1-4.984-1.366l-.358-.212-3.716.973.992-3.624-.234-.373A9.757 9.757 0 0 1 2.2 12.003c.003-5.407 4.4-9.806 9.807-9.806 5.407 0 9.806 4.4 9.806 9.807 0 5.407-4.4 9.796-9.81 9.796z" />
+            </svg>
           </a>
         </div>
       </div>
