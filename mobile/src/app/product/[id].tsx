@@ -19,7 +19,7 @@ import type { Product } from "../../types/product";
 export default function ProductDetailsScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const productId = Number(params.id);
-  const { colors } = useShopTheme();
+  const { colors, theme } = useShopTheme();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -82,9 +82,9 @@ export default function ProductDetailsScreen() {
               ) : <Text style={{ color: colors.muted }}>No product image</Text>}
               {images.length > 1 && (
                 <View style={styles.controls} pointerEvents="box-none">
-                  <Pressable onPress={() => moveImage(-1)} style={styles.arrowButton} accessibilityLabel="Previous image" accessibilityRole="button"><Text style={styles.arrowText}>‹</Text></Pressable>
-                  <View style={styles.counter}><Text style={styles.counterText}>{imageIndex + 1} / {images.length}</Text></View>
-                  <Pressable onPress={() => moveImage(1)} style={styles.arrowButton} accessibilityLabel="Next image" accessibilityRole="button"><Text style={styles.arrowText}>›</Text></Pressable>
+                  <Pressable onPress={() => moveImage(-1)} style={[styles.arrowButton, { backgroundColor: theme === "dark" ? "rgba(8,8,12,.88)" : "rgba(253,251,248,.94)", borderColor: colors.border }]} accessibilityLabel="Previous image" accessibilityRole="button"><Text style={[styles.arrowText, { color: colors.text }]}>‹</Text></Pressable>
+                  <View style={[styles.counter, { backgroundColor: theme === "dark" ? "rgba(8,8,12,.88)" : "rgba(253,251,248,.88)", borderColor: colors.border }]}><Text style={[styles.counterText, { color: colors.text }]}>{imageIndex + 1} / {images.length}</Text></View>
+                  <Pressable onPress={() => moveImage(1)} style={[styles.arrowButton, { backgroundColor: theme === "dark" ? "rgba(8,8,12,.88)" : "rgba(253,251,248,.94)", borderColor: colors.border }]} accessibilityLabel="Next image" accessibilityRole="button"><Text style={[styles.arrowText, { color: colors.text }]}>›</Text></Pressable>
                 </View>
               )}
             </View>
@@ -147,10 +147,10 @@ const styles = StyleSheet.create({
   gallery: { width: "100%", aspectRatio: 4 / 5, alignItems: "center", justifyContent: "center", overflow: "hidden" },
   mainImage: { width: "100%", height: "100%" },
   controls: { position: "absolute", top: "46%", left: 12, right: 12, flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  arrowButton: { width: 39, height: 43, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(9,9,13,.90)", borderColor: "#73737a", borderWidth: 1 },
-  arrowText: { color: "#ffffff", fontSize: 31 },
-  counter: { backgroundColor: "rgba(9,9,13,.90)", borderColor: "#73737a", borderWidth: 1, paddingHorizontal: 11, paddingVertical: 8 },
-  counterText: { color: "#ffffff", fontSize: 12, fontWeight: "600" },
+  arrowButton: { width: 39, height: 43, alignItems: "center", justifyContent: "center", borderWidth: 1 },
+  arrowText: { fontSize: 31 },
+  counter: { borderWidth: 1, paddingHorizontal: 11, paddingVertical: 8 },
+  counterText: { fontSize: 12, fontWeight: "600" },
   thumbnails: { marginHorizontal: 18, marginTop: 16 },
   thumb: { width: 72, height: 83, borderWidth: 1 },
   thumbnailImage: { width: "100%", height: "100%" },
