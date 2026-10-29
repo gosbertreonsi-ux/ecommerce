@@ -1,26 +1,27 @@
 import { createContext, useContext, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
+/** Exact E-Shop website palette: frontend/src/vero.css and dark-mode.css. */
 const colors = {
   dark: {
-    background: "#060608",
-    card: "#141418",
-    surface: "#101014",
-    text: "#EEEFF3",
-    muted: "#A9A9B5",
-    border: "#33333D",
-    button: "#E2E2EA",
-    buttonText: "#09090B",
+    background: "#060608", // --paper
+    card: "#141418",       // --card
+    surface: "#101014",    // --paper-deep
+    text: "#eeedf1",       // --ink
+    muted: "#aaa9b3",      // --muted
+    border: "#303037",     // --line
+    button: "#eeedf1",     // --ink
+    buttonText: "#08080b", // --on-ink
   },
   light: {
-    background: "#F7F4EF",
-    card: "#FDFBF8",
-    surface: "#EFEAE2",
-    text: "#1C1A17",
-    muted: "#6F6A62",
-    border: "#DDD7CC",
-    button: "#1C1A17",
-    buttonText: "#FBF9F5",
+    background: "#f7f4ef", // --paper
+    card: "#fdfbf8",       // --card
+    surface: "#efeae2",    // --paper-deep
+    text: "#1c1a17",       // --ink
+    muted: "#6f6a62",      // --muted
+    border: "#ddd7cc",     // --line
+    button: "#1c1a17",     // --ink
+    buttonText: "#fbf9f5", // --on-ink
   },
 } as const;
 
