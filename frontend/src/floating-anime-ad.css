@@ -1,7 +1,4 @@
-/* Floating anime advertisement — scoped to the homepage only.
-   All artwork keeps pointer-events disabled so the page remains readable
-   and all product / footer links stay clickable. */
-
+/* E-Shop anime overlays: decorative only. Never intercept footer or product clicks. */
 .esh-floating-anime__marker {
   display: block;
   width: 0;
@@ -10,6 +7,7 @@
   pointer-events: none;
 }
 
+/* Original swinging anime over the collection; unchanged positioning. */
 .esh-floating-anime {
   position: fixed;
   z-index: 24;
@@ -23,27 +21,22 @@
   user-select: none;
   transform-origin: 47% 3%;
   transform: translate3d(0, -115vh, 0) rotate(-24deg) scale(.82);
-  transition:
-    opacity 320ms ease,
+  transition: opacity 320ms ease,
     transform 1200ms cubic-bezier(.16, 1, .3, 1),
     visibility 0s linear 1200ms;
 }
-
 .esh-floating-anime--pinned {
   opacity: 1;
   visibility: visible;
   transform: translate3d(0, 0, 0) rotate(9deg) scale(1);
-  transition:
-    opacity 400ms ease,
+  transition: opacity 400ms ease,
     transform 1200ms cubic-bezier(.18, .75, .2, 1),
     visibility 0s;
 }
-
 .esh-floating-anime__swing {
   position: relative;
   transform-origin: 47% 3%;
 }
-
 .esh-floating-anime__swing::before {
   content: "";
   position: absolute;
@@ -54,11 +47,9 @@
   width: 1px;
   background: linear-gradient(to bottom, transparent, rgba(177, 180, 193, .7));
 }
-
 .esh-floating-anime--pinned .esh-floating-anime__swing {
   animation: esh-anime-settle 1800ms 250ms ease-out both;
 }
-
 .esh-floating-anime__art {
   display: block;
   width: 100%;
@@ -68,140 +59,90 @@
   filter: drop-shadow(0 18px 24px rgba(0, 0, 0, .42));
 }
 
-/* Footer sequence */
+/* Footer girls align their feet to the footer bottom and their heads to
+   the footer TOP BORDER (the black/cream line in your screenshot).
+   Exact height and bottom offset are calculated from the real footer size. */
 .esh-footer-anime {
   position: fixed;
   z-index: 23;
-  bottom: 10px;
+  bottom: var(--esh-footer-girl-bottom, 8px);
+  height: var(--esh-footer-girl-height, 300px);
+  width: auto;
   pointer-events: none;
   user-select: none;
   opacity: 0;
   visibility: hidden;
+  will-change: opacity, transform;
   transition:
-    opacity 700ms ease,
-    transform 900ms cubic-bezier(.22, 1, .36, 1),
-    visibility 0s linear 900ms;
+    opacity 650ms ease,
+    transform 850ms cubic-bezier(.22, 1, .36, 1),
+    visibility 0s linear 850ms;
 }
-
 .esh-footer-anime.is-visible {
   opacity: 1;
   visibility: visible;
   transition:
-    opacity 700ms ease,
-    transform 900ms cubic-bezier(.22, 1, .36, 1),
+    opacity 650ms ease,
+    transform 850ms cubic-bezier(.22, 1, .36, 1),
     visibility 0s;
 }
-
-.esh-footer-anime--receiving {
-  right: clamp(10px, 3vw, 42px);
-  width: clamp(125px, 16vw, 220px);
-  transform: translate3d(24px, 16px, 0) scale(.94);
+.esh-footer-anime__art {
+  display: block;
+  height: 100%;
+  width: auto;
+  max-width: none;
+  object-fit: contain;
+  filter: drop-shadow(0 12px 18px rgba(0, 0, 0, .25));
 }
 
+/* The receiving artwork includes the shopping products above the girl.
+   Moving it toward the right edge keeps it close to the hanging products. */
+.esh-footer-anime--receiving {
+  right: clamp(4px, 1.25vw, 22px);
+  transform: translate3d(18px, 20px, 0) scale(.93);
+}
 .esh-footer-anime--receiving.is-visible {
   transform: translate3d(0, 0, 0) scale(1);
 }
-
 .esh-footer-anime--receiving.is-visible .esh-footer-anime__art {
-  animation: esh-footer-happy-float 2400ms ease-in-out infinite;
+  animation: esh-footer-happy-float 2300ms ease-in-out infinite;
 }
 
+/* The wondering girl sits inside the left area marked pink in the screenshot. */
 .esh-footer-anime--wondering {
-  left: clamp(18px, 4vw, 72px);
-  bottom: 18px;
-  width: clamp(120px, 15vw, 220px);
-  transform: translate3d(-34px, 0, 0) scale(.95);
+  left: clamp(6px, 2.5vw, 44px);
+  transform: translate3d(-26px, 16px, 0) scale(.93);
 }
-
 .esh-footer-anime--wondering.is-visible {
   transform: translate3d(0, 0, 0) scale(1);
 }
 
-.esh-footer-anime__art {
-  display: block;
-  width: 100%;
-  height: auto;
-  object-fit: contain;
-  filter: drop-shadow(0 14px 22px rgba(0, 0, 0, .34));
-}
-
-.esh-footer-anime__art--wondering {
-  max-height: 42vh;
-}
-
 @keyframes esh-anime-settle {
-  0%   { transform: rotate(-17deg); }
-  28%  { transform: rotate(12deg); }
-  52%  { transform: rotate(-7deg); }
-  75%  { transform: rotate(4deg); }
-  90%  { transform: rotate(-2deg); }
+  0% { transform: rotate(-17deg); }
+  28% { transform: rotate(12deg); }
+  52% { transform: rotate(-7deg); }
+  75% { transform: rotate(4deg); }
+  90% { transform: rotate(-2deg); }
   100% { transform: rotate(0deg); }
 }
-
 @keyframes esh-footer-happy-float {
-  0%, 100% { transform: translateY(0) rotate(0deg); }
-  50% { transform: translateY(-8px) rotate(.8deg); }
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
 }
 
 @media (max-width: 850px) {
-  .esh-floating-anime {
-    top: 95px;
-    right: -14px;
-    width: clamp(145px, 29vw, 245px);
-  }
-
-  .esh-footer-anime--receiving {
-    width: clamp(100px, 21vw, 160px);
-    right: 8px;
-  }
-
-  .esh-footer-anime--wondering {
-    width: clamp(95px, 18vw, 145px);
-    left: 8px;
-  }
+  .esh-floating-anime { top: 95px; right: -14px; width: clamp(145px, 29vw, 245px); }
+  .esh-footer-anime--receiving { right: 2px; }
+  .esh-footer-anime--wondering { left: 2px; }
 }
-
 @media (max-width: 540px) {
-  .esh-floating-anime {
-    top: auto;
-    bottom: 6vh;
-    right: -12px;
-    width: clamp(105px, 32vw, 155px);
-    max-height: 45vh;
-  }
-
-  .esh-floating-anime__art {
-    max-height: 45vh;
-  }
-
-  .esh-floating-anime__swing::before {
-    top: -45px;
-    height: 58px;
-  }
-
-  .esh-footer-anime--receiving {
-    width: 102px;
-    right: 4px;
-    bottom: 14px;
-  }
-
-  .esh-footer-anime--wondering {
-    width: 88px;
-    left: 6px;
-    bottom: 10px;
-  }
+  .esh-floating-anime { top: auto; bottom: 6vh; right: -12px; width: clamp(105px, 32vw, 155px); max-height: 45vh; }
+  .esh-floating-anime__art { max-height: 45vh; }
+  .esh-floating-anime__swing::before { top: -45px; height: 58px; }
 }
-
 @media (prefers-reduced-motion: reduce) {
-  .esh-floating-anime,
-  .esh-floating-anime--pinned,
-  .esh-footer-anime,
-  .esh-footer-anime.is-visible {
-    transition: none !important;
-  }
-
+  .esh-floating-anime, .esh-floating-anime--pinned,
+  .esh-footer-anime, .esh-footer-anime.is-visible { transition: none !important; }
   .esh-floating-anime--pinned .esh-floating-anime__swing,
-  .esh-footer-anime--receiving.is-visible .esh-footer-anime__art {
-    animation: none !important;
-  }
+  .esh-footer-anime--receiving.is-visible .esh-footer-anime__art { animation: none !important; }
 }
