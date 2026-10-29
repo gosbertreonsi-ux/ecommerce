@@ -6,6 +6,7 @@ import type { Product } from "../types/product";
 import { getOrderedImages, productImageUrl } from "../lib/api";
 import { formatTZS } from "../lib/format";
 import { useShopTheme } from "../theme/ShopTheme";
+import { fonts } from "../theme/fonts";
 
 /** Screenshot-shaped rounded cards, but ALL information comes from the real API. */
 export function ProductCard({ product }: { product: Product }) {
@@ -42,7 +43,7 @@ export function ProductCard({ product }: { product: Product }) {
               <Ionicons name="chevron-back" size={13} color={colors.text} />
             </Pressable>
             <View style={[styles.imageCount, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              <Text style={{ color: colors.text, fontWeight: "700", fontSize: 10 }}>{active + 1}/{images.length}</Text>
+              <Text style={{ color: colors.text, fontFamily: fonts.sansSemiBold, fontSize: 10 }}>{active + 1}/{images.length}</Text>
             </View>
             <Pressable accessibilityRole="button" accessibilityLabel={`Next image of ${product.name}`} onPress={() => changeImage(1)} style={[styles.galleryArrow, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <Ionicons name="chevron-forward" size={13} color={colors.text} />
@@ -66,13 +67,13 @@ const styles = StyleSheet.create({
   photoButton: { width: "100%", height: "100%", alignItems: "center", justifyContent: "center" },
   productImage: { width: "100%", height: "100%" },
   featured: { position: "absolute", top: 10, left: 8, paddingVertical: 5, paddingHorizontal: 7, borderRadius: 8 },
-  featuredText: { fontSize: 8, fontWeight: "700", letterSpacing: .7 },
+  featuredText: { fontSize: 8, fontFamily: fonts.sansSemiBold, letterSpacing: .7 },
   galleryControls: { position: "absolute", bottom: 8, left: 7, right: 7, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   galleryArrow: { height: 25, width: 25, borderRadius: 13, borderWidth: 1, alignItems: "center", justifyContent: "center" },
   imageCount: { minHeight: 23, borderRadius: 12, borderWidth: 1, paddingHorizontal: 8, alignItems: "center", justifyContent: "center" },
   productInfo: { paddingHorizontal: 1, paddingTop: 10 },
-  category: { fontSize: 10, marginBottom: 4 },
-  name: { fontSize: 12, fontWeight: "700", lineHeight: 17, minHeight: 33 },
-  price: { fontSize: 12, fontWeight: "800", marginTop: 7 },
-  stock: { fontSize: 10, marginTop: 3 },
+  category: { fontSize: 10, fontFamily: fonts.sans, marginBottom: 4 },
+  name: { fontSize: 21, fontFamily: fonts.serif, lineHeight: 22, minHeight: 44 },
+  price: { fontSize: 12, fontFamily: fonts.sansSemiBold, marginTop: 7 },
+  stock: { fontSize: 10, fontFamily: fonts.sans, marginTop: 3 },
 });
