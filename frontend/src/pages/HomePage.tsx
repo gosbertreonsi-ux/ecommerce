@@ -201,7 +201,17 @@ function HomePage() {
 
       <section id="our-story" className="esh-story" aria-labelledby="story-heading">
         <Container className="esh-story__inner">
-          <div className="esh-story__seal" aria-hidden="true"><span>E</span><small>THE EVERYDAY EDIT</small></div>
+          <div className="esh-story__seal" aria-hidden="true">
+            <img
+              src="../../public/images/e-shop-lion.svg"
+              alt=""
+              width={283}
+              height={278}
+              draggable={false}
+              style={{ width: "68%", height: "68%", objectFit: "contain" }}
+            />
+            <small>THE EVERYDAY EDIT</small>
+          </div>
           <div className="esh-story__text">
             <p className="esh-kicker">OUR PHILOSOPHY</p>
             <h2 id="story-heading">Beautiful things. <em>Simple pleasures.</em></h2>
