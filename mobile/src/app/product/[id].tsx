@@ -15,6 +15,7 @@ import { formatTZS } from "../../lib/format";
 import { useShopTheme } from "../../theme/ShopTheme";
 import type { Product } from "../../types/product";
 
+/** Editorial product detail, using the same real E-Shop product and variant API. */
 export default function ProductDetailsScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const productId = Number(params.id);
@@ -31,15 +32,13 @@ export default function ProductDetailsScreen() {
       try {
         setLoading(true);
         setError(null);
-        if (!Number.isInteger(productId) || productId <= 0) {
-          throw new Error("Invalid product ID.");
-        }
+        if (!Number.isInteger(productId) || productId <= 0) throw new Error("Invalid product ID.");
         const data = await getProduct(productId);
         if (cancelled) return;
         setProduct(data);
         setImageIndex(0);
-        const initial = data.variants.find((variant) => Number(variant.stock) > 0) ?? data.variants[0];
-        setSelectedVariantId(initial?.id ?? null);
+        const firstInStock = data.variants.find((v) => Number(v.stock) > 0) ?? data.variants[0];
+        setSelectedVariantId(firstInStock?.id ?? null);
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : "Product unavailable.");
       } finally {
@@ -51,103 +50,83 @@ export default function ProductDetailsScreen() {
   }, [productId]);
 
   const images = useMemo(() => getOrderedImages(product?.images ?? []), [product]);
-  const selectedVariant = product?.variants.find((variant) => variant.id === selectedVariantId);
+  const selectedVariant = product?.variants.find((v) => v.id === selectedVariantId);
 
   const selectVariant = (variantId: number) => {
     setSelectedVariantId(variantId);
     if (!product) return;
-    const variant = product.variants.find((item) => item.id === variantId);
-    if (!variant) return;
-    // Your current backend has no variant-image relation. The existing image
-    // altText can match a variant value, e.g. "Blue" or "128GB".
-    const matchIndex = images.findIndex(
-      (image) => image.altText?.toLowerCase().includes(variant.value.trim().toLowerCase()),
-    );
-    if (variant.value.trim() && matchIndex >= 0) setImageIndex(matchIndex);
+    const variant = product.variants.find((v) => v.id === variantId);
+    if (!variant?.value.trim()) return;
+    // Mirror the website's alt-text based variant picture matching.
+    const idx = images.findIndex((img) => img.altText?.toLowerCase().includes(variant.value.trim().toLowerCase()));
+    if (idx >= 0) setImageIndex(idx);
   };
-
-  const moveImage = (direction: -1 | 1) => {
-    setImageIndex((current) =>
-      images.length ? (current + direction + images.length) % images.length : 0,
-    );
-  };
+  const moveImage = (direction: -1 | 1) => setImageIndex((i) => images.length ? (i + direction + images.length) % images.length : 0);
 
   return (
     <SafeAreaView style={[styles.screen, { backgroundColor: colors.background }]}>
       <ScrollView contentContainerStyle={styles.page}>
-        <Pressable onPress={() => router.back()} style={styles.back} accessibilityRole="button">
-          <Text style={{ color: colors.text, fontSize: 15 }}>← Back to collection</Text>
-        </Pressable>
-
-        {loading && <ActivityIndicator size="large" color={colors.text} />}
-        {error && <Text style={{ color: colors.text, lineHeight: 25 }}>{error}</Text>}
-
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
+          <Text style={[styles.brand, { color: colors.text }]}>E-Shop<Text style={{ color: colors.muted }}>.</Text></Text>
+          <Pressable onPress={() => router.back()} accessibilityRole="button" style={styles.headerBack}>
+            <Text style={[styles.backLabel, { color: colors.text }]}>←  BACK</Text>
+          </Pressable>
+        </View>
+        {loading && <ActivityIndicator style={styles.loading} size="large" color={colors.text} />}
+        {error && <Text style={[styles.error, { color: colors.text }]}>{error}</Text>}
         {product && !loading && (
           <>
             <View style={[styles.gallery, { backgroundColor: colors.surface }]}>
               {images[imageIndex] ? (
-                <Image
-                  source={{ uri: productImageUrl(images[imageIndex].imageUrl) }}
-                  resizeMode="cover"
-                  style={styles.heroImage}
-                  accessibilityLabel={images[imageIndex].altText ?? product.name}
-                />
-              ) : (
-                <Text style={{ color: colors.muted }}>No product image</Text>
+                <Image source={{ uri: productImageUrl(images[imageIndex].imageUrl) }} resizeMode="cover" style={styles.mainImage} accessibilityLabel={images[imageIndex].altText ?? product.name} />
+              ) : <Text style={{ color: colors.muted }}>No product image</Text>}
+              {images.length > 1 && (
+                <View style={styles.controls} pointerEvents="box-none">
+                  <Pressable onPress={() => moveImage(-1)} style={styles.arrowButton} accessibilityLabel="Previous image" accessibilityRole="button"><Text style={styles.arrowText}>‹</Text></Pressable>
+                  <View style={styles.counter}><Text style={styles.counterText}>{imageIndex + 1} / {images.length}</Text></View>
+                  <Pressable onPress={() => moveImage(1)} style={styles.arrowButton} accessibilityLabel="Next image" accessibilityRole="button"><Text style={styles.arrowText}>›</Text></Pressable>
+                </View>
               )}
             </View>
             {images.length > 1 && (
-              <View style={styles.galleryControls}>
-                <Pressable onPress={() => moveImage(-1)} style={styles.galleryButton} accessibilityLabel="Previous image">
-                  <Text style={[styles.galleryArrow, { color: colors.text }]}>‹</Text>
-                </Pressable>
-                <Text style={{ color: colors.muted }}>{imageIndex + 1} / {images.length}</Text>
-                <Pressable onPress={() => moveImage(1)} style={styles.galleryButton} accessibilityLabel="Next image">
-                  <Text style={[styles.galleryArrow, { color: colors.text }]}>›</Text>
-                </Pressable>
-              </View>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.thumbnails} contentContainerStyle={{ gap: 10 }}>
+                {images.map((image, index) => (
+                  <Pressable key={image.id} accessibilityRole="button" accessibilityLabel={`View image ${index + 1}`} onPress={() => setImageIndex(index)} style={[styles.thumb, { borderColor: index === imageIndex ? colors.text : colors.border }]}>
+                    <Image source={{ uri: productImageUrl(image.imageUrl) }} resizeMode="cover" style={styles.thumbnailImage} />
+                  </Pressable>
+                ))}
+              </ScrollView>
             )}
-            <Text style={[styles.category, { color: colors.muted }]}>{product.category.name}</Text>
-            <Text style={[styles.title, { color: colors.text }]}>{product.name}</Text>
-            <Text style={[styles.price, { color: colors.text }]}>{formatTZS(product.price)}</Text>
-            <Text style={[styles.description, { color: colors.muted }]}>{product.description}</Text>
-
-            {product.variants.length > 0 && (
-              <View style={styles.variants}>
-                <Text style={[styles.subtitle, { color: colors.text }]}>Choose an option</Text>
-                {product.variants.map((variant) => {
-                  const active = selectedVariantId === variant.id;
-                  const stock = Number(variant.stock);
-                  return (
-                    <Pressable
-                      key={variant.id}
-                      accessibilityRole="button"
-                      accessibilityState={{ selected: active, disabled: stock <= 0 }}
-                      disabled={stock <= 0}
-                      onPress={() => selectVariant(variant.id)}
-                      style={[
-                        styles.variantButton,
-                        { borderColor: active ? colors.text : colors.border, backgroundColor: active ? colors.surface : colors.card },
-                        stock <= 0 && { opacity: .48 },
-                      ]}
-                    >
-                      <Text style={{ color: colors.text, fontSize: 14 }}>{variant.name}: {variant.value}</Text>
-                      <Text style={{ color: colors.muted, fontSize: 12 }}>
-                        {stock > 0 ? `${stock} available` : "Out of stock"}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-                {selectedVariant && (
-                  <Text style={{ color: colors.muted, marginTop: 8 }}>Selected SKU: {selectedVariant.sku}</Text>
-                )}
-              </View>
-            )}
-            <View style={[styles.lessonNotice, { borderColor: colors.border, backgroundColor: colors.surface }]}>
-              <Text style={{ color: colors.text, fontWeight: "600" }}>Lesson 1: browsing is live</Text>
-              <Text style={{ color: colors.muted, lineHeight: 21, marginTop: 4 }}>
-                The catalog and variants read real E-Shop products. Sign-in and add-to-cart will be connected to the existing API in the next lessons.
-              </Text>
+            <View style={styles.info}>
+              <Text style={[styles.eyebrow, { color: colors.muted }]}>{product.category.name.toUpperCase()}</Text>
+              <Text style={[styles.name, { color: colors.text }]}>{product.name}</Text>
+              <Text style={[styles.price, { color: colors.text }]}>{formatTZS(product.price)}</Text>
+              <View style={[styles.hairline, { borderBottomColor: colors.border }]} />
+              <Text style={[styles.description, { color: colors.muted }]}>{product.description}</Text>
+              {product.variants.length > 0 && (
+                <View style={styles.variants}>
+                  <Text style={[styles.variantHeading, { color: colors.text }]}>Choose an option</Text>
+                  {product.variants.map((variant) => {
+                    const selected = selectedVariantId === variant.id;
+                    const stock = Number(variant.stock);
+                    return (
+                      <Pressable
+                        key={variant.id}
+                        accessibilityRole="button"
+                        accessibilityState={{ selected, disabled: stock <= 0 }}
+                        disabled={stock <= 0}
+                        onPress={() => selectVariant(variant.id)}
+                        style={[styles.variantButton, { backgroundColor: selected ? colors.surface : colors.background, borderColor: selected ? colors.text : colors.border }, stock <= 0 && { opacity: .45 }]}
+                      >
+                        <Text style={[styles.variantLabel, { color: colors.text }]}>{variant.name}: {variant.value}</Text>
+                        <Text style={[styles.variantStock, { color: colors.muted }]}>{stock > 0 ? `${stock} available` : "Out of stock"}</Text>
+                      </Pressable>
+                    );
+                  })}
+                  {!!selectedVariant && <Text style={[styles.sku, { color: colors.muted }]}>SKU: {selectedVariant.sku}</Text>}
+                </View>
+              )}
+              <Text style={[styles.footnote, { color: colors.muted, borderTopColor: colors.border }]}>GOOD THINGS, BEAUTIFULLY FOUND</Text>
             </View>
           </>
         )}
@@ -158,19 +137,34 @@ export default function ProductDetailsScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  page: { paddingHorizontal: 18, paddingTop: 15, paddingBottom: 50 },
-  back: { minHeight: 48, justifyContent: "center", marginBottom: 15 },
+  page: { paddingBottom: 50 },
+  header: { height: 78, paddingHorizontal: 18, borderBottomWidth: 1, flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  brand: { fontFamily: "Georgia", fontSize: 31, fontWeight: "600", letterSpacing: -1.4 },
+  headerBack: { paddingVertical: 16, paddingLeft: 12 },
+  backLabel: { fontSize: 10, letterSpacing: 1.1 },
+  loading: { paddingTop: 60 },
+  error: { padding: 24, lineHeight: 23 },
   gallery: { width: "100%", aspectRatio: 4 / 5, alignItems: "center", justifyContent: "center", overflow: "hidden" },
-  heroImage: { width: "100%", height: "100%" },
-  galleryControls: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 22 },
-  galleryButton: { width: 52, height: 50, alignItems: "center", justifyContent: "center" },
-  galleryArrow: { fontSize: 35 },
-  category: { fontSize: 12, marginBottom: 7 },
-  title: { fontFamily: "Georgia", fontSize: 34, lineHeight: 41, marginBottom: 16 },
-  price: { fontSize: 22, fontWeight: "600", marginBottom: 18 },
+  mainImage: { width: "100%", height: "100%" },
+  controls: { position: "absolute", top: "46%", left: 12, right: 12, flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  arrowButton: { width: 39, height: 43, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(9,9,13,.90)", borderColor: "#73737a", borderWidth: 1 },
+  arrowText: { color: "#ffffff", fontSize: 31 },
+  counter: { backgroundColor: "rgba(9,9,13,.90)", borderColor: "#73737a", borderWidth: 1, paddingHorizontal: 11, paddingVertical: 8 },
+  counterText: { color: "#ffffff", fontSize: 12, fontWeight: "600" },
+  thumbnails: { marginHorizontal: 18, marginTop: 16 },
+  thumb: { width: 72, height: 83, borderWidth: 1 },
+  thumbnailImage: { width: "100%", height: "100%" },
+  info: { paddingHorizontal: 24, paddingTop: 32 },
+  eyebrow: { fontSize: 10, letterSpacing: 1.9, marginBottom: 13 },
+  name: { fontFamily: "Georgia", fontSize: 42, lineHeight: 49, letterSpacing: -1.3, marginBottom: 17 },
+  price: { fontSize: 17, marginBottom: 19 },
+  hairline: { borderBottomWidth: 1, marginBottom: 21 },
   description: { fontSize: 14, lineHeight: 25 },
-  variants: { marginTop: 28, gap: 10 },
-  subtitle: { fontFamily: "Georgia", fontSize: 23, marginBottom: 8 },
-  variantButton: { minHeight: 58, borderWidth: 1, paddingHorizontal: 15, paddingVertical: 11, flexDirection: "row", gap: 10, alignItems: "center", justifyContent: "space-between" },
-  lessonNotice: { marginTop: 32, borderWidth: 1, padding: 16, borderRadius: 4 },
+  variants: { marginTop: 32, gap: 10 },
+  variantHeading: { fontFamily: "Georgia", fontSize: 25, marginBottom: 8 },
+  variantButton: { borderWidth: 1, paddingHorizontal: 15, paddingVertical: 14, flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 10 },
+  variantLabel: { flexShrink: 1, fontSize: 13 },
+  variantStock: { fontSize: 10 },
+  sku: { marginTop: 5, fontSize: 11 },
+  footnote: { borderTopWidth: 1, marginTop: 54, paddingTop: 23, fontSize: 10, letterSpacing: 1.2 },
 });
