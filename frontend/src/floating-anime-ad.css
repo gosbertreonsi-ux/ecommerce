@@ -172,6 +172,7 @@
   height: auto;
   max-height: 78vh;
   object-fit: contain;
+  padding-bottom: 13px; /* Avoid clipping the shoes */
   filter: drop-shadow(0 12px 22px rgba(0, 0, 0, .22));
 }
 
