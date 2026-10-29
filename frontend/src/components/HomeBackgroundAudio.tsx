@@ -7,8 +7,8 @@ import "../home-background-audio.css";
  * Range: 0 (silent) to 1 (full volume).
  * Using a quiet default helps keep browsing comfortable.
  */
-const AUDIO_SOURCE = "/audio/home-ambience.wav";
-const DEFAULT_VOLUME = 0.22;
+const AUDIO_SOURCE = "../../public/audio/ad.mp3";
+const DEFAULT_VOLUME = 0.1;
 const START_MUTED = false;
 const MUTE_PREFERENCE_KEY = "esh-home-background-audio-muted";
 
