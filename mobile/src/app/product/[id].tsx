@@ -13,6 +13,7 @@ import {
 import { getOrderedImages, getProduct, productImageUrl } from "../../lib/api";
 import { formatTZS } from "../../lib/format";
 import { useShopTheme } from "../../theme/ShopTheme";
+import { fonts } from "../../theme/fonts";
 import type { Product } from "../../types/product";
 
 /** Editorial product detail, using the same real E-Shop product and variant API. */
@@ -79,7 +80,7 @@ export default function ProductDetailsScreen() {
             <View style={[styles.gallery, { backgroundColor: colors.surface }]}>
               {images[imageIndex] ? (
                 <Image source={{ uri: productImageUrl(images[imageIndex].imageUrl) }} resizeMode="cover" style={styles.mainImage} accessibilityLabel={images[imageIndex].altText ?? product.name} />
-              ) : <Text style={{ color: colors.muted }}>No product image</Text>}
+              ) : <Text style={{ color: colors.muted, fontFamily: fonts.sans }}>No product image</Text>}
               {images.length > 1 && (
                 <View style={styles.controls} pointerEvents="box-none">
                   <Pressable onPress={() => moveImage(-1)} style={[styles.arrowButton, { backgroundColor: theme === "dark" ? "rgba(8,8,12,.88)" : "rgba(253,251,248,.94)", borderColor: colors.border }]} accessibilityLabel="Previous image" accessibilityRole="button"><Text style={[styles.arrowText, { color: colors.text }]}>‹</Text></Pressable>
@@ -139,32 +140,32 @@ const styles = StyleSheet.create({
   screen: { flex: 1 },
   page: { paddingBottom: 50 },
   header: { height: 78, paddingHorizontal: 18, borderBottomWidth: 1, flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  brand: { fontFamily: "Georgia", fontSize: 31, fontWeight: "600", letterSpacing: -1.4 },
+  brand: { fontFamily: fonts.serifSemiBold, fontSize: 34, letterSpacing: -1.4 },
   headerBack: { paddingVertical: 16, paddingLeft: 12 },
-  backLabel: { fontSize: 10, letterSpacing: 1.1 },
+  backLabel: { fontSize: 10, fontFamily: fonts.sansMedium, letterSpacing: 1.1 },
   loading: { paddingTop: 60 },
-  error: { padding: 24, lineHeight: 23 },
+  error: { padding: 24, lineHeight: 23, fontFamily: fonts.sans },
   gallery: { width: "100%", aspectRatio: 4 / 5, alignItems: "center", justifyContent: "center", overflow: "hidden" },
   mainImage: { width: "100%", height: "100%" },
   controls: { position: "absolute", top: "46%", left: 12, right: 12, flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   arrowButton: { width: 39, height: 43, alignItems: "center", justifyContent: "center", borderWidth: 1 },
-  arrowText: { fontSize: 31 },
+  arrowText: { fontSize: 31, fontFamily: fonts.sans },
   counter: { borderWidth: 1, paddingHorizontal: 11, paddingVertical: 8 },
-  counterText: { fontSize: 12, fontWeight: "600" },
+  counterText: { fontSize: 12, fontFamily: fonts.sansSemiBold },
   thumbnails: { marginHorizontal: 18, marginTop: 16 },
   thumb: { width: 72, height: 83, borderWidth: 1 },
   thumbnailImage: { width: "100%", height: "100%" },
   info: { paddingHorizontal: 24, paddingTop: 32 },
-  eyebrow: { fontSize: 10, letterSpacing: 1.9, marginBottom: 13 },
-  name: { fontFamily: "Georgia", fontSize: 42, lineHeight: 49, letterSpacing: -1.3, marginBottom: 17 },
-  price: { fontSize: 17, marginBottom: 19 },
+  eyebrow: { fontSize: 10, fontFamily: fonts.sansMedium, letterSpacing: 1.9, marginBottom: 13 },
+  name: { fontFamily: fonts.serif, fontSize: 46, lineHeight: 49, letterSpacing: -1.3, marginBottom: 17 },
+  price: { fontSize: 17, fontFamily: fonts.sansSemiBold, marginBottom: 19 },
   hairline: { borderBottomWidth: 1, marginBottom: 21 },
-  description: { fontSize: 14, lineHeight: 25 },
+  description: { fontSize: 14, fontFamily: fonts.sans, lineHeight: 25 },
   variants: { marginTop: 32, gap: 10 },
-  variantHeading: { fontFamily: "Georgia", fontSize: 25, marginBottom: 8 },
+  variantHeading: { fontFamily: fonts.serif, fontSize: 29, marginBottom: 8 },
   variantButton: { borderWidth: 1, paddingHorizontal: 15, paddingVertical: 14, flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 10 },
-  variantLabel: { flexShrink: 1, fontSize: 13 },
-  variantStock: { fontSize: 10 },
-  sku: { marginTop: 5, fontSize: 11 },
-  footnote: { borderTopWidth: 1, marginTop: 54, paddingTop: 23, fontSize: 10, letterSpacing: 1.2 },
+  variantLabel: { flexShrink: 1, fontSize: 13, fontFamily: fonts.sansMedium },
+  variantStock: { fontSize: 10, fontFamily: fonts.sans },
+  sku: { marginTop: 5, fontSize: 11, fontFamily: fonts.sans },
+  footnote: { borderTopWidth: 1, marginTop: 54, paddingTop: 23, fontSize: 10, fontFamily: fonts.sans, letterSpacing: 1.2 },
 });
