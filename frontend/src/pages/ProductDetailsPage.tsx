@@ -135,32 +135,35 @@ function ProductDetailsPage() {
     variantImage ??
     primaryImage;
 
-  const handleVariantSelect = (variantId: number) => {
-    setSelectedVariantId(variantId);
-    // Release any manually selected thumbnail so a matching variant image appears.
-    setSelectedImageId(null);
+  // Clicking a color selects its variant AND promotes its matching photo
+  // to the large cover. When there is no labelled photo for that variant,
+  // fall back to the product's primary image instead of showing a wrong color.
+  const handleVariantSelect = (variant: ProductVariant) => {
+    const matchingImage = findVariantImage(images, variant);
+
+    setSelectedVariantId(variant.id);
+    setSelectedImageId(matchingImage?.id ?? primaryImage?.id ?? null);
     setQuantity(1);
     setFeedback(null);
   };
 
+  // Clicking a thumbnail makes it the large cover AND highlights its color.
+  // The image's Alt Text identifies its variant; longer variant names are
+  // checked first (for example, "Sky Blue" before "Blue").
   const handleThumbnailSelect = (image: ProductImage) => {
-  // Display the clicked photograph.
-  setSelectedImageId(image.id);
+    setSelectedImageId(image.id);
 
-  // Determine which color/variant this image belongs to.
-  const matchingVariant = [...product.variants]
-    .sort((a, b) => b.value.length - a.value.length)
-    .find((variant) =>
-      findVariantImage([image], variant) !== undefined
-    );
+    const matchingVariant = [...product.variants]
+      .sort((a, b) => b.value.trim().length - a.value.trim().length)
+      .find((variant) => findVariantImage([image], variant) !== undefined);
 
-  if (matchingVariant) {
-    // Synchronize the selected color, SKU, and stock.
-    setSelectedVariantId(matchingVariant.id);
+    if (matchingVariant) {
+      setSelectedVariantId(matchingVariant.id);
+    }
+
     setQuantity(1);
     setFeedback(null);
-  }
-};
+  };
 
   const decreaseQuantity = () => {
     setQuantity((current) => Math.max(1, current - 1));
@@ -331,9 +334,11 @@ function ProductDetailsPage() {
                         type="button"
                         disabled={isOutOfStock}
                         aria-pressed={isSelected}
-                        onClick={() => handleVariantSelect(variant.id)}
+                        onClick={() => handleVariantSelect(variant)}
                         className={`flex items-center justify-between gap-4 border px-4 py-3 text-left ${
-                          isSelected ? "border-black bg-black text-white" : "bg-white"
+                          isSelected
+                            ? "border-black bg-black text-white"
+                            : "bg-white hover:border-black hover:bg-neutral-50"
                         } ${isOutOfStock ? "cursor-not-allowed opacity-50" : ""}`}
                       >
                         <span>
