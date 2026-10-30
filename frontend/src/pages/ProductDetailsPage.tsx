@@ -135,32 +135,10 @@ function ProductDetailsPage() {
     variantImage ??
     primaryImage;
 
-  // Clicking a color selects its variant AND promotes its matching photo
-  // to the large cover. When there is no labelled photo for that variant,
-  // fall back to the product's primary image instead of showing a wrong color.
-  const handleVariantSelect = (variant: ProductVariant) => {
-    const matchingImage = findVariantImage(images, variant);
-
-    setSelectedVariantId(variant.id);
-    setSelectedImageId(matchingImage?.id ?? primaryImage?.id ?? null);
-    setQuantity(1);
-    setFeedback(null);
-  };
-
-  // Clicking a thumbnail makes it the large cover AND highlights its color.
-  // The image's Alt Text identifies its variant; longer variant names are
-  // checked first (for example, "Sky Blue" before "Blue").
-  const handleThumbnailSelect = (image: ProductImage) => {
-    setSelectedImageId(image.id);
-
-    const matchingVariant = [...product.variants]
-      .sort((a, b) => b.value.trim().length - a.value.trim().length)
-      .find((variant) => findVariantImage([image], variant) !== undefined);
-
-    if (matchingVariant) {
-      setSelectedVariantId(matchingVariant.id);
-    }
-
+  const handleVariantSelect = (variantId: number) => {
+    setSelectedVariantId(variantId);
+    // Release any manually selected thumbnail so a matching variant image appears.
+    setSelectedImageId(null);
     setQuantity(1);
     setFeedback(null);
   };
@@ -284,7 +262,7 @@ function ProductDetailsPage() {
                     className="esh-detail-thumbnail"
                     aria-label={`View ${image.altText || product.name} image`}
                     aria-pressed={displayedImage?.id === image.id}
-                    onClick={() => handleThumbnailSelect(image)}
+                    onClick={() => setSelectedImageId(image.id)}
                   >
                     <img
                       src={getProductImageUrl(image.imageUrl)}
@@ -334,11 +312,9 @@ function ProductDetailsPage() {
                         type="button"
                         disabled={isOutOfStock}
                         aria-pressed={isSelected}
-                        onClick={() => handleVariantSelect(variant)}
+                        onClick={() => handleVariantSelect(variant.id)}
                         className={`flex items-center justify-between gap-4 border px-4 py-3 text-left ${
-                          isSelected
-                            ? "border-black bg-black text-white"
-                            : "bg-white hover:border-black hover:bg-neutral-50"
+                          isSelected ? "border-black bg-black text-white" : "bg-white"
                         } ${isOutOfStock ? "cursor-not-allowed opacity-50" : ""}`}
                       >
                         <span>
