@@ -10,7 +10,7 @@
   object-position: center;
   pointer-events: none;
 }
-.esh-hero__image-link > .esh-hero__image-caption { z-index: 2; }
+.esh-hero__image-link > .esh-hero__image-caption { z-index: 4; }
 
 /* Gallery: keep primary cover, then fade secondary image over it. */
 .esh-product-card__image-wrap { position: relative; isolation: isolate; }
