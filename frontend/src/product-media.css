@@ -122,3 +122,54 @@
 }
 /* Keep the vertical editorial label above optional video footage. */
 .esh-hero__side-label { z-index: 3; }
+
+/* =========================================
+   PRODUCT CAROUSEL — VISIBLE NEXT ARROW
+   ========================================= */
+
+/* Keep carousel controls positioned and available */
+.esh-product-card__carousel-controls {
+  opacity: 1;
+  pointer-events: none;
+}
+
+/* Hide previous arrow and image counter by default */
+.esh-product-card__carousel-controls
+  > .esh-product-card__carousel-arrow:first-child,
+.esh-product-card__carousel-controls
+  > .esh-product-card__carousel-count {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 250ms ease;
+}
+
+/* Always show a transparent next arrow */
+.esh-product-card__carousel-controls
+  > .esh-product-card__carousel-arrow:last-child {
+  opacity: 0.75;
+  pointer-events: auto;
+  background: rgba(253, 251, 248, 0.45);
+  border-color: rgba(0, 0, 0, 0.12);
+  backdrop-filter: blur(5px);
+}
+
+/* Hover or keyboard focus: reveal both arrows and counter */
+.esh-product-card__image-wrap:is(:hover, :focus-within)
+  .esh-product-card__carousel-controls > * {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Restore solid arrow background on interaction */
+.esh-product-card__image-wrap:is(:hover, :focus-within)
+  .esh-product-card__carousel-arrow {
+  background: rgba(253, 251, 248, 0.94);
+}
+
+/* On touch devices, keep all controls visible */
+@media (hover: none) {
+  .esh-product-card__carousel-controls > * {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}

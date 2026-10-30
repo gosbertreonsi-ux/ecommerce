@@ -1,27 +1,16 @@
 import multer from "multer";
 
-// In-memory upload: never write images to Render's ephemeral filesystem.
-// The existing admin route already requires authentication + ADMIN role.
-const allowedMimeTypes = new Set([
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "image/gif",
-]);
-
-const fileFilter: multer.Options["fileFilter"] = (_req, file, cb) => {
-  if (!allowedMimeTypes.has(file.mimetype)) {
-    cb(new Error("Only JPEG, PNG, WebP, and GIF images are allowed."));
-    return;
-  }
-  cb(null, true);
-};
-
+/**
+ * Do not trust the browser-provided MIME type or the filename extension.
+ * The Cloudinary image utility decodes each upload, verifies it is a raster
+ * image, and normalizes it to WebP before any bytes reach Cloudinary.
+ *
+ * Only the existing authenticated ADMIN routes use this middleware.
+ */
 export const productImageUpload = multer({
   storage: multer.memoryStorage(),
-  fileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024,
+    fileSize: 10 * 1024 * 1024, // 10 MB per original file
     files: 10,
     parts: 12,
   },

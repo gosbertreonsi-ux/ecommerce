@@ -203,7 +203,7 @@ function HomePage() {
         <Container className="esh-story__inner">
           <div className="esh-story__seal" aria-hidden="true">
             <img
-              src="../../public/images/e-shop-lion.svg"
+              src="/images/e-shop-lion.svg"
               alt=""
               width={283}
               height={278}

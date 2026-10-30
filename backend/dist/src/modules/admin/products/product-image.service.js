@@ -6,13 +6,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.setPrimaryImage = exports.deleteImage = exports.updateImage = exports.addImages = void 0;
 const prisma_1 = __importDefault(require("../../../config/prisma"));
 const cloudinary_1 = require("../../../config/cloudinary");
-const getProduct = (productId) => prisma_1.default.product.findFirst({
-    where: { id: productId, deletedAt: null },
-});
-// ==============================
-// Upload to Cloudinary, then save secure URLs in the existing ProductImage table.
-// No database schema change or storefront change is required.
-// ==============================
+const getProduct = (productId) => prisma_1.default.product.findFirst({ where: { id: productId, deletedAt: null } });
+/** Decode and upload first, then write URLs to existing Neon ProductImage rows. */
 const addImages = async (productId, files) => {
     const product = await getProduct(productId);
     if (!product)
@@ -28,10 +23,9 @@ const addImages = async (productId, files) => {
     });
     const uploaded = [];
     try {
-        // Sequential uploading lowers peak memory usage on small free-tier servers.
-        for (const file of files) {
+        // Sequential upload avoids high CPU usage on a free Render instance.
+        for (const file of files)
             uploaded.push(await (0, cloudinary_1.uploadProductImage)(file));
-        }
         return await prisma_1.default.$transaction(uploaded.map((image, index) => prisma_1.default.productImage.create({
             data: {
                 imageUrl: image.url,
@@ -43,33 +37,25 @@ const addImages = async (productId, files) => {
         })));
     }
     catch (error) {
-        // Remove cloud assets if an upload or DB write fails halfway through.
-        const results = await Promise.allSettled(uploaded.map((image) => (0, cloudinary_1.deleteManagedCloudImage)(image.publicId)));
-        for (const result of results) {
-            if (result.status === "rejected") {
-                console.error("Unable to clean up Cloudinary asset:", result.reason);
-            }
-        }
+        console.error("[PRODUCT_IMAGE_UPLOAD_FAILED]", {
+            productId,
+            message: error instanceof Error ? error.message : "Unexpected upload error",
+        });
+        await Promise.allSettled(uploaded.map((image) => (0, cloudinary_1.deleteManagedCloudImage)(image.publicId)));
         throw error;
     }
 };
 exports.addImages = addImages;
-// ==============================
-// Update image metadata (unchanged contract)
-// ==============================
 const updateImage = async (productId, imageId, data) => {
-    const image = await prisma_1.default.productImage.findFirst({
+    const existing = await prisma_1.default.productImage.findFirst({
         where: { id: imageId, productId },
     });
-    if (!image)
+    if (!existing)
         throw new Error("Product image not found");
     return prisma_1.default.productImage.update({ where: { id: imageId }, data });
 };
 exports.updateImage = updateImage;
-// ==============================
-// Delete database image, promote next primary, then clean up cloud storage.
-// Legacy placeholder and old local-disk URLs are not destroyed in Cloudinary.
-// ==============================
+/** Delete from Neon first, then clean up only app-owned Cloudinary assets. */
 const deleteImage = async (productId, imageId) => {
     const image = await prisma_1.default.productImage.findFirst({
         where: { id: imageId, productId },
@@ -84,10 +70,7 @@ const deleteImage = async (productId, imageId) => {
                 orderBy: { displayOrder: "asc" },
             });
             if (next) {
-                await tx.productImage.update({
-                    where: { id: next.id },
-                    data: { isPrimary: true },
-                });
+                await tx.productImage.update({ where: { id: next.id }, data: { isPrimary: true } });
             }
         }
     });
@@ -97,31 +80,21 @@ const deleteImage = async (productId, imageId) => {
             await (0, cloudinary_1.deleteManagedCloudImage)(publicId);
         }
         catch (error) {
-            // DB state remains correct; this cloud object may require manual cleanup.
             console.error("Unable to remove Cloudinary image:", error);
         }
     }
     return { message: "Product image deleted successfully" };
 };
 exports.deleteImage = deleteImage;
-// ==============================
-// Set one image as primary (unchanged contract)
-// ==============================
 const setPrimaryImage = async (productId, imageId) => {
-    const image = await prisma_1.default.productImage.findFirst({
-        where: { id: imageId, productId },
-    });
+    const image = await prisma_1.default.productImage.findFirst({ where: { id: imageId, productId } });
     if (!image)
         throw new Error("Product image not found");
     await prisma_1.default.$transaction([
         prisma_1.default.productImage.updateMany({
-            where: { productId, isPrimary: true },
-            data: { isPrimary: false },
+            where: { productId, isPrimary: true }, data: { isPrimary: false },
         }),
-        prisma_1.default.productImage.update({
-            where: { id: imageId },
-            data: { isPrimary: true },
-        }),
+        prisma_1.default.productImage.update({ where: { id: imageId }, data: { isPrimary: true } }),
     ]);
     return prisma_1.default.productImage.findUnique({ where: { id: imageId } });
 };
