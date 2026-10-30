@@ -4,7 +4,7 @@ interface StatusTagProps {
   status: string;
 }
 
-function StatusTag({ status }: StatusTagProps) {
+function Statustag({ status }: StatusTagProps) {
   const danger = DANGER_STATUSES.has(status);
 
   return (
@@ -18,4 +18,4 @@ function StatusTag({ status }: StatusTagProps) {
   );
 }
 
-export default StatusTag;
+export default Statustag;
