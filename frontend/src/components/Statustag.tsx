@@ -4,7 +4,7 @@ interface StatusTagProps {
   status: string;
 }
 
-function Statustag({ status }: StatusTagProps) {
+function StatusTag({ status }: StatusTagProps) {
   const danger = DANGER_STATUSES.has(status);
 
   return (
@@ -13,9 +13,9 @@ function Statustag({ status }: StatusTagProps) {
         danger ? "text-[color:var(--danger)]" : ""
       }`}
     >
-      {status.toLowerCase().replace(/_/g, " ")}
+      {status}
     </span>
   );
 }
 
-export default Statustag;
+export default StatusTag;
