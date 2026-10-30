@@ -1,47 +1,83 @@
-# E-Shop Mobile — website design alignment (Lesson 01 refinement)
+# E-Shop — permanent Cloudinary product photos (Phase 1)
 
-This is a **small UI-only patch** for the React Native + Expo mobile project made in Lesson 01. It follows the real E-Shop website's layout and visual language instead of using the generic starter look.
+This is a patch for the existing `gosbertreonsi-ux/ecommerce` project on the `deploy-preview` branch. It changes the **backend image storage only**, retaining all existing routes, frontend components, themes, ProductImage columns, and Neon data.
 
-## Replace only these paths in your existing project
+## 1. Get Cloudinary credentials
 
-| File | Change |
-| --- | --- |
-| `mobile/src/app/index.tsx` | Editorial homepage: original headline/copy, hero image, categories, philosophy, featured selection, closing banner and footer, working product search and filters |
-| `mobile/src/components/ProductCard.tsx` | Unboxed portrait product cards and working left/right gallery arrows with legible `1 / 3` counters |
-| `mobile/src/app/product/[id].tsx` | Product detail page styles, gallery counters, thumbnails and variants in the same brand style |
-| `mobile/assets/e-shop-lion.png` | Transparent PNG export of the E-Shop lion SVG you supplied (React Native Image-compatible asset) |
+Create a free Cloudinary account: https://cloudinary.com/pricing
+In the Cloudinary Console, locate your **Cloud name, API key, and API secret** under Settings > API Keys.
+**Never share the API secret or push it to GitHub.**
 
-**Nothing in the website or backend is changed.** The original mobile `ShopTheme.tsx`, `api.ts`, `product.ts` and `.env` stay as they are. No additional packages are required for this patch.
+## 2. Back up the three files to be replaced
 
-### Apply in PowerShell
-
-From `C:\Users\H P\ecommerce-system`, place the ZIP file in that directory and run:
+From PowerShell in the project root:
 
 ```powershell
-Expand-Archive -Path ".\E-Shop-Mobile-Web-Design-Alignment.zip" -DestinationPath "." -Force
-cd .\mobile
-npx expo start --web --clear
+Copy-Item backend/src/middlewares/upload.middleware.ts backend/src/middlewares/upload.middleware.ts.bak
+Copy-Item backend/src/modules/admin/products/product-image.service.ts backend/src/modules/admin/products/product-image.service.ts.bak
 ```
 
-If a Metro instance is already running, stop it with `Ctrl+C` before restarting. After the browser preview loads, reopen the Basalt preview if you want a phone frame.
+Copy the three files from this patch into the matching paths. `backend/src/config/cloudinary.ts` is new. The other two replace the existing files. Prefer extracting the ZIP to a temporary location first to inspect differences.
 
-### What stays functional
+## 3. Install the cloud SDK
 
-- Existing Express API and real database products and images
-- Theme switching, product navigation, search, category filters and pull-to-refresh
-- Product variants and variant-by-image-alt-text selection, no new API requests
+```powershell
+cd "C:\Users\H P\ecommerce-system\backend"
+npm install cloudinary
+```
 
-### Still separate mobile lessons
+This updates both package.json and package-lock.json. Keep both changes in your commit.
 
-- The website's promotional video/audio and scrolling anime overlays require native implementations and are not reproduced in this patch.
-- Authentication, server-connected cart, checkout and payments have not yet been added to the mobile app.
-- The website's custom fonts may not be installed on every phone. Georgia/native serif is a temporary fallback, so visual alignment is close but not yet pixel-identical.
-- Website CSS and DOM effects cannot directly run inside React Native.
+## 4. Set backend environment variables locally and in Render
 
-### Learn what changed
+```dotenv
+CLOUDINARY_CLOUD_NAME="your_cloud_name"
+CLOUDINARY_API_KEY="your_api_key"
+CLOUDINARY_API_SECRET="your_secret"
+```
 
-1. `FlatList` replaces a DOM page and includes editorial sections using `ListHeaderComponent` and `ListFooterComponent`.
-2. `Image` with `resizeMode="cover"` emulates `object-fit: cover`.
-3. `Pressable` replaces anchors and buttons; `expo-router` handles navigation.
-4. Native `StyleSheet` recreates margins, borders and typography from your existing `storefront.css` and `dark-mode.css`.
-5. Brand art stored as PNG is loaded locally, whereas remote product images are delivered by your existing Express API.
+In Render: eshop-api-preview > Environment. Add the 3 credentials as private values. **Do not set VITE_ variables for these secrets.**
+
+You do not need to modify Prisma schema or run a migration.
+
+## 5. Test the build locally
+
+```powershell
+cd "C:\Users\H P\ecommerce-system\backend"
+npx prisma generate
+npm run build
+```
+
+If building locally, make sure your backend `.env` still contains a valid DIRECT_URL and DATABASE_URL for Prisma.
+
+## 6. Commit and deploy
+
+```powershell
+cd "C:\Users\H P\ecommerce-system"
+git status
+git add backend/src/config/cloudinary.ts backend/src/middlewares/upload.middleware.ts backend/src/modules/admin/products/product-image.service.ts backend/package.json backend/package-lock.json
+git commit -m "Store E-Shop product images in Cloudinary"
+git push origin deploy-preview
+```
+
+Your backend's Render auto-deploy will rebuild. Confirm the deployment reports Live.
+
+## 7. Test image persistence
+
+1. Log in as your private E-Shop admin.
+2. Go to `/admin/products` on the deployed website.
+3. Edit one seeded product, e.g. Modern Desk Lamp.
+4. Upload a genuine product photo that you own or are licensed to use (JPEG/PNG/WebP/GIF, max 5 MB).
+5. Mark it primary and save.
+6. Check the product on the public storefront: its `imageUrl` should start with `https://res.cloudinary.com/`.
+7. Trigger a redeploy or revisit later: the image should remain visible.
+8. Try deletion: only images uploaded by this patch are removed from Cloudinary.
+
+Existing `placehold.co` placeholder URLs remain until you replace them manually. Existing `/uploads/...` paths are not automatically migrated; they may already have disappeared from the old Render disk.
+
+## Notes
+
+* This code preserves the existing admin-only API route and the form field name `images`.
+* Do not copy `.bak` files to Git or commit them. The existing backend `.gitignore` ignores `.env`, not `.bak`.
+* For production, add periodic cleanup/reconciliation for orphaned assets if needed, and monitor free-plan usage limits.
+* This patch has no database schema changes. Test on your preview before production rollout.

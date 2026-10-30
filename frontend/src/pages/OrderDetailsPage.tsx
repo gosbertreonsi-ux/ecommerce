@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+﻿import { useCallback, useEffect, useState } from "react";
 
 import { Link, useNavigate, useParams } from "react-router-dom";
 
@@ -241,7 +241,7 @@ function OrderDetailsPage() {
   };
 
   if (authLoading || loading) {
-    return <Spinner label="Loading order…" />;
+    return <Spinner label="Loading orderâ€¦" />;
   }
 
   if (error) {
@@ -293,7 +293,7 @@ function OrderDetailsPage() {
 
   const renderReview = (productId: number, productName: string) => {
     if (reviewsLoading) {
-      return <p className="text-sm text-neutral-500">Checking review status…</p>;
+      return <p className="text-sm text-neutral-500">Checking review statusâ€¦</p>;
     }
 
     if (!isDelivered) {
@@ -321,7 +321,7 @@ function OrderDetailsPage() {
 
           {existingReview.comment && (
             <p className="mt-3 text-sm leading-6 text-neutral-600">
-              “{existingReview.comment}”
+              â€œ{existingReview.comment}â€
             </p>
           )}
         </div>
@@ -714,7 +714,7 @@ function OrderDetailsPage() {
                     aria-busy={submittingReview}
                   >
                     <Star size={16} aria-hidden="true" />
-                    {submittingReview ? "Submitting…" : "Submit review"}
+                    {submittingReview ? "Submittingâ€¦" : "Submit review"}
                   </button>
                 )}
               </div>
@@ -727,3 +727,5 @@ function OrderDetailsPage() {
 }
 
 export default OrderDetailsPage;
+
+

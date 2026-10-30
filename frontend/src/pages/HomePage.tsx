@@ -23,7 +23,7 @@ import {
  * Comment it out again to restore the clickable product image.
  */
 const HERO_VIDEO_SOURCES: string[] = [
-  "../../public/videos/hero.mp4",
+  "/videos/hero.mp4",
 ];
 const HERO_VIDEO_SRC = HERO_VIDEO_SOURCES[0];
 
