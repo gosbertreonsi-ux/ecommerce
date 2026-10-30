@@ -8,7 +8,7 @@ import Button from "../components/Button";
 import Container from "../components/Container";
 import EmptyState from "../components/EmptyState";
 import Spinner from "../components/Spinner";
-import StatusTag from "../components/Statustag";
+import StatusTag from "../components/StatusTag";
 
 import { getMyOrders, type Order } from "../api/orders.api";
 
