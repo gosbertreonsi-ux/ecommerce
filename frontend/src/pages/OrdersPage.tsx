@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 
 import { Link, useNavigate } from "react-router-dom";
 
@@ -64,7 +64,7 @@ function OrdersPage() {
   }, [token, authLoading, navigate]);
 
   if (authLoading || loading) {
-    return <Spinner label="Loading your orders…" />;
+    return <Spinner label="Loading your ordersâ€¦" />;
   }
 
   if (error) {
@@ -154,7 +154,7 @@ function OrdersPage() {
 
                         <p className="mt-1 text-sm text-neutral-500">
                           {order.createdAt &&
-                            `${new Date(order.createdAt).toLocaleDateString()} · `}
+                            `${new Date(order.createdAt).toLocaleDateString()} Â· `}
                           {itemCount} {itemCount === 1 ? "item" : "items"}
                         </p>
 
@@ -192,3 +192,5 @@ function OrdersPage() {
 }
 
 export default OrdersPage;
+
+
