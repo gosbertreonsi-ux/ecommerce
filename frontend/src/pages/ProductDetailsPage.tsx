@@ -143,6 +143,25 @@ function ProductDetailsPage() {
     setFeedback(null);
   };
 
+  const handleThumbnailSelect = (image: ProductImage) => {
+  // Display the clicked photograph.
+  setSelectedImageId(image.id);
+
+  // Determine which color/variant this image belongs to.
+  const matchingVariant = [...product.variants]
+    .sort((a, b) => b.value.length - a.value.length)
+    .find((variant) =>
+      findVariantImage([image], variant) !== undefined
+    );
+
+  if (matchingVariant) {
+    // Synchronize the selected color, SKU, and stock.
+    setSelectedVariantId(matchingVariant.id);
+    setQuantity(1);
+    setFeedback(null);
+  }
+};
+
   const decreaseQuantity = () => {
     setQuantity((current) => Math.max(1, current - 1));
   };
@@ -262,7 +281,7 @@ function ProductDetailsPage() {
                     className="esh-detail-thumbnail"
                     aria-label={`View ${image.altText || product.name} image`}
                     aria-pressed={displayedImage?.id === image.id}
-                    onClick={() => setSelectedImageId(image.id)}
+                    onClick={() => handleThumbnailSelect(image)}
                   >
                     <img
                       src={getProductImageUrl(image.imageUrl)}
