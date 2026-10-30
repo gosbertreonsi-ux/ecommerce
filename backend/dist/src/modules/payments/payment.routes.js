@@ -40,5 +40,10 @@ const router = (0, express_1.Router)();
 router.use(auth_middleware_1.authenticate);
 router.post("/", paymentController.createPayment);
 router.get("/order/:orderId", paymentController.getPaymentByOrderId);
-router.post("/:id/simulate", paymentController.simulatePayment);
+// Never expose the development-only endpoint that marks orders as PAID.
+// Only an authenticated server-to-server payment provider callback should
+// mark a real payment as successfully collected in production.
+if (process.env.NODE_ENV !== "production") {
+    router.post("/:id/simulate", paymentController.simulatePayment);
+}
 exports.default = router;

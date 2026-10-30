@@ -34,21 +34,28 @@ async function main() {
     // =========================================================
     // ADMIN USER
     // =========================================================
-    const password = await bcrypt_1.default.hash("Admin123!", 10);
+    const adminEmail = process.env.SEED_ADMIN_EMAIL?.trim().toLowerCase();
+    const adminPassword = process.env.SEED_ADMIN_PASSWORD;
+    if (!adminEmail || !adminPassword || adminPassword.length < 12) {
+        throw new Error("Set SEED_ADMIN_EMAIL and SEED_ADMIN_PASSWORD (12+ characters)");
+    }
+    const passwordHash = await bcrypt_1.default.hash(adminPassword, 12);
     await prisma_1.default.user.upsert({
-        where: {
-            email: "admin@ecommerce.com",
+        where: { email: adminEmail },
+        update: {
+            password: passwordHash,
+            roleId: adminRole.id,
+            isActive: true,
         },
-        update: {},
         create: {
-            firstName: "System",
+            firstName: "Shop",
             lastName: "Administrator",
-            email: "admin@ecommerce.com",
-            password,
+            email: adminEmail,
+            password: passwordHash,
             roleId: adminRole.id,
         },
     });
-    console.log("✅ Admin account created");
+    console.log("Administrator configured");
     // =========================================================
     // CATEGORIES
     // =========================================================
